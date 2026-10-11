@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Microsoft+YaHei+UI:wght@100..900&family=Segoe+UI:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-primary-fixed":"#001d33","primary-fixed-dim":"#afc9e6","tertiary-fixed":"#a9f0e4","on-secondary":"#ffffff","on-error":"#ffffff","primary-fixed":"#cee5ff","surface":"#f5faff","surface-tint":"#47617a","secondary-fixed":"#acedff","tertiary":"#001916","on-secondary-container":"#006a7d","on-tertiary-fixed":"#00201c","on-secondary-fixed":"#001f26","background":"#f5faff","on-surface-variant":"#43474d","on-primary-container":"#7a94af","primary":"#00172a","surface-container-high":"#d1ecff","on-tertiary-fixed-variant":"#005048","surface-container-lowest":"#ffffff","on-tertiary":"#ffffff","on-background":"#001e2d","primary-container":"#102c43","surface-dim":"#c1def3","tertiary-fixed-dim":"#8dd3c8","outline":"#73777d","secondary-container":"#9ae9fe","on-primary":"#ffffff","tertiary-container":"#00302b","surface-bright":"#f5faff","secondary":"#00687a","surface-container-highest":"#c9e7fb","on-error-container":"#93000a","inverse-surface":"#163343","on-secondary-fixed-variant":"#004e5c","outline-variant":"#c3c7cd","error-container":"#ffdad6","surface-container":"#ddf1ff","surface-variant":"#c9e7fb","inverse-primary":"#afc9e6","on-primary-fixed-variant":"#2f4961","secondary-fixed-dim":"#83d2e7","surface-container-low":"#e9f5ff","on-tertiary-container":"#589d93","inverse-on-surface":"#e3f3ff","error":"#ba1a1a","on-surface":"#001e2d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-xs":"0.25rem","space-sm":"0.5rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"0.75rem","margin":"1rem","space-lg":"1rem"},"fontFamily":{"display-title":["Segoe UI"],"code-badge":["JetBrains Mono"],"body-medium":["Microsoft YaHei UI"],"body-default":["Microsoft YaHei UI"],"caption":["Microsoft YaHei UI"],"code-default":["JetBrains Mono"],"headline-md":["Segoe UI"],"headline-lg":["Segoe UI"],"body-secondary":["Microsoft YaHei UI"]},"fontSize":{"display-title":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"code-badge":["11px",{"lineHeight":"14px","fontWeight":"500"}],"body-medium":["13px",{"lineHeight":"18px","fontWeight":"500"}],"body-default":["13px",{"lineHeight":"18px","fontWeight":"400"}],"caption":["11px",{"lineHeight":"14px","fontWeight":"400"}],"code-default":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-md":["15px",{"lineHeight":"20px","fontWeight":"600"}],"headline-lg":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-secondary":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-default text-on-surface antialiased select-none"><header class="fixed top-0 left-0 w-full z-50 flex flex-col"><div class="h-8 w-full bg-primary flex items-center justify-between px-space-md select-none text-on-primary border-b border-inverse-surface/40"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[14px] text-tertiary-fixed">anchor</span><span class="font-caption text-caption text-primary-fixed-dim tracking-wide">Ocean 模型港 v2.4.0 (Windows x64)</span></div><div class="flex items-center h-full -mr-space-md"><button class="h-8 w-11 flex items-center justify-center hover:bg-inverse-surface transition-colors text-primary-fixed-dim hover:text-on-primary" type="button"><span class="material-symbols-outlined text-[13px]">remove</span></button><button class="h-8 w-11 flex items-center justify-center hover:bg-inverse-surface transition-colors text-primary-fixed-dim hover:text-on-primary" type="button"><span class="material-symbols-outlined text-[12px]">check_box_outline_blank</span></button><button class="h-8 w-11 flex items-center justify-center hover:bg-error transition-colors text-primary-fixed-dim hover:text-on-error" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div><div class="h-[100px] w-full bg-primary-container relative overflow-hidden px-space-xl flex items-center justify-between shadow-[0_2px_10px_rgba(0,23,42,0.15)]"><div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_85%_30%,#a9f0e4_0%,transparent_60%)]"></div><div class="flex items-center gap-space-lg relative z-10"><img alt="Ocean 模型港 Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XUo7pFTFVHGPWA3ZbmLHU_pTCQR7yyUe2cKIgBZzNtD-OmG6UbJv422lqp0CF1t8Nlazyb6BsCiyyZj3tAwdtAbuek19MLYDncH7LnIbgO4w1SVUtB3o-nX18kG_e0LGjuu8RxpNKCf2Qb2YAAu7Vs8_x_5BW1DKvzWfY1LYkf-YyXIXlK1kmFIapr4qXBDzRWU9yjlkq5GF3VhlMUbvlLpGC1XjbM16I7z7NvCUTUDQS7AZpgSXRrv5Ob"/><div class="flex flex-col"><div class="flex items-center gap-space-sm"><span class="font-headline-lg text-headline-lg text-on-primary font-semibold tracking-tight">Ocean 模型港</span><span class="font-code-badge text-code-badge bg-tertiary-fixed/15 text-tertiary-fixed px-space-xs py-[1px] rounded border border-tertiary-fixed/30">PRO RELAY</span></div><p class="font-caption text-caption text-primary-fixed-dim mt-[2px]">多账号 AI 模型本地中继网关 · 汇聚多源模型，驱动本地生产力</p></div></div><div class="flex items-center gap-space-md relative z-10"><div class="flex items-center gap-space-md bg-inverse-surface/60 rounded-xl px-space-md py-space-sm border border-outline-variant/20"><div class="flex flex-col text-right"><span class="font-caption text-caption text-primary-fixed-dim">本地端口 8790</span><div class="flex items-center justify-end gap-[6px] mt-[1px]"><span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span><span class="font-body-secondary text-body-secondary text-on-primary font-medium">服务运行中</span></div></div><div class="h-6 w-[1px] bg-outline-variant/30"></div><div class="flex items-center gap-space-xs"><button class="h-7 px-space-sm rounded bg-secondary text-on-secondary font-caption text-caption hover:bg-on-secondary-container transition-colors flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[14px]">refresh</span><span>重启网关</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></div></header><aside class="fixed left-0 top-[132px] bottom-0 w-48 bg-primary-container z-40 flex flex-col justify-between shadow-[2px_0_12px_rgba(0,23,42,0.06)] border-r border-inverse-surface/30"><div class="flex flex-col pt-space-md"><div class="px-space-md pb-space-sm text-primary-fixed-dim/60 font-caption text-caption uppercase tracking-wider">Navigation</div><nav class="flex flex-col gap-[2px] px-space-xs" data-active-classes="bg-tertiary-fixed/15 text-on-primary font-body-medium border-l-[3px] border-tertiary-fixed shadow-[inset_0_0_8px_rgba(169,240,228,0.08)]"><a class="flex items-center gap-space-sm px-space-md h-9 text-primary-fixed-dim hover:text-on-primary hover:bg-inverse-surface/50 rounded-lg transition-all font-body-default text-body-default" data-path="gateway" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span>网关</span></a><a class="flex items-center gap-space-sm px-space-md h-9 text-primary-fixed-dim hover:text-on-primary hover:bg-inverse-surface/50 rounded-lg transition-all font-body-default text-body-default" data-path="providers-and-accounts" href="#"><span class="material-symbols-outlined text-[18px]">dns</span><span>供应商与账号</span></a><a class="flex items-center gap-space-sm px-space-md h-9 text-primary-fixed-dim hover:text-on-primary hover:bg-inverse-surface/50 rounded-lg transition-all font-body-default text-body-default" data-path="model-catalog" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span>模型</span></a><a class="flex items-center gap-space-sm px-space-md h-9 text-primary-fixed-dim hover:text-on-primary hover:bg-inverse-surface/50 rounded-lg transition-all font-body-default text-body-default" data-path="logs-and-requests" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>调用记录</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md h-9 rounded-lg transition-all bg-tertiary-fixed/15 text-on-primary font-body-medium border-l-[3px] border-tertiary-fixed shadow-[inset_0_0_8px_rgba(169,240,228,0.08)]" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>设置</span></a></nav></div><div class="p-space-md m-space-xs rounded-xl bg-inverse-surface/50 border border-outline-variant/20 flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-caption text-caption text-primary-fixed-dim">状态监听</span><span class="font-code-badge text-code-badge text-tertiary-fixed bg-tertiary-fixed/10 px-[6px] py-[1px] rounded">127.0.0.1</span></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed"></span><span class="font-caption text-caption text-on-primary font-medium">本地中继正常</span></div><p class="font-caption text-caption text-primary-fixed-dim/70 leading-tight mt-1">局域网已禁用 · 本地专享</p></div></aside><div class="pl-48 w-full"><main class="relative pt-[132px] min-h-screen bg-surface px-space-xl py-space-lg w-full"><div class="flex flex-col w-full pb-20 relative">
+<!-- Toast Feedback Overlay -->
+<div class="fixed top-20 right-8 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-space-sm bg-primary text-on-primary px-space-lg py-space-sm rounded-xl shadow-xl" id="toast-notification">
+<span class="material-symbols-outlined text-tertiary-fixed text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium text-on-primary">配置已即时更新</span>
+<span class="font-caption text-caption text-primary-fixed-dim">端口与路由策略已自动应用至本地运行时</span>
+</div>
+</div>
+<!-- Header & Live Search Bar -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs text-secondary font-caption text-caption mb-1">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+<span>网关与核心运行时环境</span>
+</div>
+<h1 class="font-display-title text-display-title text-on-background tracking-tight">系统与网关设置</h1>
+<p class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">控制本地中继服务参数、网络隧道转发以及安全认证凭证</p>
+</div>
+<!-- Search input -->
+<div class="relative w-full md:w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-9 pl-9 pr-8 bg-surface-container-lowest text-on-surface font-body-default text-body-default rounded-lg shadow-sm placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all" id="settings-search" placeholder="搜索参数、端口或代理配置..." type="text"/>
+<button class="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-[14px] hidden" id="clear-search-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Main Settings Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Left Navigation Rail / Section Tabs -->
+<div class="lg:col-span-3 flex lg:flex-col gap-1.5 sticky top-36 self-start z-10 bg-surface/80 backdrop-blur-md p-1.5 rounded-xl">
+<button class="tab-btn flex items-center justify-between w-full px-space-md py-2.5 rounded-lg text-left transition-all bg-surface-container-lowest shadow-sm text-secondary font-body-medium text-body-medium" data-tab-target="tab-gateway" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px]">router</span>
+<span>网关与访问</span>
+</div>
+<span class="font-code-badge text-code-badge bg-secondary/10 text-secondary px-1.5 py-0.5 rounded">01</span>
+</button>
+<button class="tab-btn flex items-center justify-between w-full px-space-md py-2.5 rounded-lg text-left transition-all hover:bg-surface-container-low text-on-surface-variant font-body-default text-body-default" data-tab-target="tab-proxy" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px]">public</span>
+<span>网络代理</span>
+</div>
+<span class="font-code-badge text-code-badge bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">02</span>
+</button>
+<button class="tab-btn flex items-center justify-between w-full px-space-md py-2.5 rounded-lg text-left transition-all hover:bg-surface-container-low text-on-surface-variant font-body-default text-body-default" data-tab-target="tab-preferences" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px]">dataset</span>
+<span>偏好与数据</span>
+</div>
+<span class="font-code-badge text-code-badge bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">03</span>
+</button>
+<!-- System Status Metric Mini Card -->
+<div class="hidden lg:flex flex-col gap-2 mt-4 p-space-md bg-surface-container-lowest rounded-xl shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface-variant">运行时状态</span>
+<span class="inline-flex items-center gap-1 font-caption text-caption text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+            活跃
+          </span>
+</div>
+<div class="flex items-center justify-between font-code-default text-code-default text-on-surface">
+<span>内存占用</span>
+<span>64.2 MB</span>
+</div>
+<div class="flex items-center justify-between font-code-default text-code-default text-on-surface">
+<span>Goroutines</span>
+<span>42 线程</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mt-1">
+<div class="bg-secondary h-full w-[28%] rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Right Panels Container -->
+<div class="lg:col-span-9 flex flex-col gap-space-lg">
+<!-- ================= SECTION 1: 网关与访问 ================= -->
+<section class="settings-section flex flex-col gap-space-md scroll-mt-36" id="tab-gateway">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">dns</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-semibold">网关与访问 (Gateway & Access)</h2>
+</div>
+<span class="font-caption text-caption text-on-surface-variant">核心协议与鉴权设置</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-6">
+<!-- Item: 本地监听端口 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="local-port-input">本地监听端口</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">默认端口为 8790，更改保存后需要手动重启网关守护进程。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-1.5">
+<div class="flex items-center gap-space-sm max-w-xs">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">tag</span>
+<input class="w-full h-8 pl-8 pr-3 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40 transition-all" id="local-port-input" max="65535" min="1024" type="number" value="8790"/>
+</div>
+<span class="font-caption text-caption text-on-surface-variant whitespace-nowrap">TCP 协议</span>
+</div>
+<p class="font-caption text-caption text-on-surface-variant/80">建议保留 8790 避免与其他常用服务 (如 8080/3000) 冲突。</p>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 本地 API Key -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="api-key-input">本地 API Key</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">下游应用 (如 NextChat、CherryStudio、Cline) 请求网关时的鉴权密钥。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-2">
+<div class="flex items-center gap-space-xs w-full max-w-lg">
+<div class="relative flex-1">
+<input class="w-full h-8 px-3 pr-10 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg select-all focus:outline-none" id="api-key-input" readonly="" type="password" value="sk-example-not-a-real-key"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors p-1" id="toggle-key-visibility" title="显示/隐藏密钥" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility_off</span>
+</button>
+</div>
+<button class="h-8 px-space-md bg-surface-container hover:bg-surface-container-high text-on-surface font-body-default text-body-default rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap" id="regenerate-key-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>重新生成</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-code-badge text-code-badge bg-surface-container text-on-surface-variant px-2 py-0.5 rounded">格式：Bearer Token</span>
+<button class="font-caption text-caption text-secondary hover:underline flex items-center gap-0.5" id="copy-key-btn" type="button">
+<span class="material-symbols-outlined text-[12px]">content_copy</span>
+<span>复制到剪贴板</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 允许无 Key 调用 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">允许无 Key 调用</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">开启后客户端在 Header 中留空或随意填 Key 均可正常发起代理请求。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="toggle-no-key" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-secondary font-medium" id="no-key-status">已开启 (免鉴权通行)</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 允许局域网连接 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">允许局域网连接 (0.0.0.0)</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">默认仅监听 127.0.0.1。开启后同 Wi-Fi 或局域网内其他物理设备可直接调用本中继。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="toggle-lan-access" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-on-surface-variant font-medium" id="lan-access-status">已关闭 (安全绑定 127.0.0.1)</span>
+</div>
+<div class="flex items-start gap-2 p-space-sm bg-surface-container-low rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary mt-0.5">security</span>
+<span class="font-caption text-caption leading-relaxed">安全提示：在未设置高强度 API Key 或身处公共网络时，不建议启用局域网广播。</span>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 默认路由供应商 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="default-provider-select">默认路由供应商</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">当下游请求未显式指定 Channel 或厂商时，优先命中此策略。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-1.5 max-w-sm">
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 bg-surface-container-low text-on-surface font-body-default text-body-default rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/30 appearance-none" id="default-provider-select">
+<option value="round-robin">自动权重轮询 (Auto Weighted Balancing)</option>
+<option value="trae">Trae (优先使用 Trae 配额与逆向通道)</option>
+<option value="loomy">Loomy (优先使用 Loomy 专线网关)</option>
+<option value="failover-first">健康首发 (优先选择过去 5 分钟延迟最低者)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<span class="font-caption text-caption text-on-surface-variant">若主账号遭遇 429 速率限制，系统将无感依序下潜至备选通道。</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 2: 网络代理 ================= -->
+<section class="settings-section flex flex-col gap-space-md scroll-mt-36" id="tab-proxy">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">public</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-semibold">网络代理 (Network Proxy)</h2>
+</div>
+<span class="font-caption text-caption text-on-surface-variant">出网流量与跨境代理节点转发</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-6">
+<!-- Item: 启用全局上游代理 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">启用全局上游代理</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">向各 AI 平台发起认证及模型推理 API 请求时，全部经由指定代理隧道传输。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="toggle-proxy-enabled" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-secondary font-medium" id="proxy-status-badge">代理已接管全局出网</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 代理协议类型 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">代理协议类型</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">选择上游客户端监听的代理隧道协议格式。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-space-md">
+<label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+<input checked="" class="text-secondary focus:ring-secondary" name="proxy_proto" type="radio" value="http"/>
+<span class="font-body-default text-body-default text-on-surface font-medium">HTTP / HTTPS</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+<input class="text-secondary focus:ring-secondary" name="proxy_proto" type="radio" value="socks5"/>
+<span class="font-body-default text-body-default text-on-surface font-medium">SOCKS5</span>
+</label>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 代理服务器地址与端口 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="proxy-host">代理节点地址与端口</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">指向 Clash、v2rayN、Surge 或远端代理宿主机 IP 与端口。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-2">
+<div class="grid grid-cols-3 gap-space-sm max-w-md">
+<div class="col-span-2 relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">domain</span>
+<input class="w-full h-8 pl-8 pr-3 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="proxy-host" placeholder="127.0.0.1" type="text" value="127.0.0.1"/>
+</div>
+<div class="col-span-1 relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">pin</span>
+<input class="w-full h-8 pl-8 pr-2 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="proxy-port" placeholder="7890" type="number" value="7890"/>
+</div>
+</div>
+<span class="font-caption text-caption text-on-surface-variant">支持本地回环地址 127.0.0.1 或局域网节点 192.168.x.x。</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 认证信息 (可选) -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">上游鉴权认证 (可选)</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">若上游代理服务要求 Basic Auth 账号密码，请在此填写。</span>
+</div>
+<div class="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-space-sm max-w-md">
+<input class="w-full h-8 px-3 font-body-default text-body-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="proxy-user" placeholder="用户名 (留空表示无需认证)" type="text"/>
+<input class="w-full h-8 px-3 font-body-default text-body-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="proxy-pass" placeholder="密码" type="password"/>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 测试代理连通性 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">连通性与延迟探测</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">向目标上游探针发送轻量级 HEAD 请求，验证网络有效性。</span>
+</div>
+<div class="md:col-span-7 flex flex-wrap items-center gap-space-md">
+<button class="h-8 px-space-md bg-secondary text-on-secondary hover:bg-on-secondary-container transition-colors font-body-default text-body-default rounded-lg flex items-center gap-1.5 shadow-sm" id="test-proxy-btn" type="button">
+<span class="material-symbols-outlined text-[16px]" id="test-proxy-icon">network_ping</span>
+<span id="test-proxy-label">测试代理连通性</span>
+</button>
+<!-- Dynamic status tag -->
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high text-on-surface font-caption text-caption" id="proxy-ping-badge">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+<span class="font-code-badge text-code-badge font-semibold text-secondary">✔ 延迟 128ms 连通正常</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= SECTION 3: 偏好与数据 ================= -->
+<section class="settings-section flex flex-col gap-space-md scroll-mt-36" id="tab-preferences">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">dataset</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-semibold">偏好与数据 (Preferences & Data)</h2>
+</div>
+<span class="font-caption text-caption text-on-surface-variant">运行策略与存储管理</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-6">
+<!-- Item: 模型筛选与自动刷新 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="catalog-filter-mode">模型列表展示策略</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">控制在模型卡片面板及客户端获取 `/v1/models` 时的聚合过滤规则。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-1.5 max-w-sm">
+<div class="relative">
+<select class="w-full h-8 pl-3 pr-8 bg-surface-container-low text-on-surface font-body-default text-body-default rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/30 appearance-none" id="catalog-filter-mode">
+<option value="all">展示全部可用模型 (包含限额临界模型)</option>
+<option selected="" value="healthy-only">仅显示额度充裕模型 (自动隐藏失效/枯竭项)</option>
+<option value="reasoning-first">优先置顶思维链模型 (DeepSeek R1 / o1)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 详细运行日志 (Debug Mode) -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">详细运行日志 (Debug Mode)</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">记录完整的 HTTP 报文、模型流式 Token 响应帧及脱敏路由细节。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="toggle-debug-mode" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-on-surface-variant" id="debug-status">常规标准日志 (INFO 等级)</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 开机/启动网关 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">程序启动时自动启动中继网关</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">每次启动 Ocean 模型港桌面端时，无需手动点击即可在后台静默拉起守护端口。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="toggle-auto-start" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-secondary font-medium">已激活自动守护</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 单账号每日换号重试次数 & 日志保留天数 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">容错调度与存储周期</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">配置单一通道故障时的最大下潜重试阈值，以及本地日志历史清理轮转策略。</span>
+</div>
+<div class="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1">
+<label class="font-body-medium text-body-medium text-on-surface" for="retry-count-input">换号重试次数</label>
+<div class="flex items-center gap-2">
+<input class="w-24 h-8 px-3 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="retry-count-input" max="10" min="1" type="number" value="3"/>
+<span class="font-caption text-caption text-on-surface-variant">次 / 失败请求</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-body-medium text-body-medium text-on-surface" for="log-retention-input">日志保留天数</label>
+<div class="flex items-center gap-2">
+<input class="w-24 h-8 px-3 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40" id="log-retention-input" max="90" min="1" type="number" value="7"/>
+<span class="font-caption text-caption text-on-surface-variant">天 (超期自动清除)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 故障自动转移 (Failover) -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-5 flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">故障自动转移 (Failover)</span>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">当主账号遭遇 429 或配额耗尽，网关在 100ms 内透明迁移至同模型后备账号，保证下游 IDE/会话不中断。</span>
+</div>
+<div class="md:col-span-7 flex items-center gap-3">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="toggle-failover" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+<span class="font-body-default text-body-default text-secondary font-medium">智能热热备份已就绪</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 数据存储目录 -->
+<div class="search-item grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 flex flex-col">
+<label class="font-headline-md text-headline-md text-on-surface" for="storage-dir-input">本地数据存储目录</label>
+<span class="font-body-secondary text-body-secondary text-on-surface-variant mt-0.5">存放 SQLite 账号凭据库、请求审计日志和会话缓存。</span>
+</div>
+<div class="md:col-span-7 flex flex-col gap-2">
+<div class="relative w-full">
+<input class="w-full h-8 pl-3 pr-2 font-code-default text-code-default text-on-surface bg-surface-container-low rounded-lg focus:outline-none select-all" id="storage-dir-input" readonly="" type="text" value="C:\Users\Admin\AppData\Roaming\OceanGateway"/>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-7 px-space-md bg-surface-container hover:bg-surface-container-high text-on-surface font-caption text-caption rounded-lg transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">folder_open</span>
+<span>浏览...</span>
+</button>
+<button class="h-7 px-space-md bg-surface-container hover:bg-surface-container-high text-on-surface font-caption text-caption rounded-lg transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">open_in_new</span>
+<span>在资源管理器中打开</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-[1px] bg-surface-container"></div>
+<!-- Item: 危险操作区 (Danger Zone) -->
+<div class="search-item flex flex-col gap-3 p-space-md bg-error-container/20 rounded-xl">
+<div class="flex items-center gap-space-xs text-error">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+<span class="font-headline-md text-headline-md font-semibold">危险操作区 (Danger Zone)</span>
+</div>
+<p class="font-body-secondary text-body-secondary text-on-surface-variant">以下操作将影响本地数据库持久层，执行后不可撤销，请谨慎操作。</p>
+<div class="flex flex-wrap items-center gap-space-md pt-1">
+<button class="h-8 px-space-md bg-surface-container-lowest hover:bg-error/10 text-error font-body-default text-body-default rounded-lg transition-colors flex items-center gap-1.5 shadow-sm" id="trigger-clear-history-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+<span>清空全部历史记录</span>
+</button>
+<button class="h-8 px-space-md bg-surface-container-lowest hover:bg-error/10 text-error font-body-default text-body-default rounded-lg transition-colors flex items-center gap-1.5 shadow-sm" id="trigger-reset-all-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>重置所有配置为默认值</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- ================= STICKY FOOTER BAR ================= -->
+<div class="fixed bottom-0 left-48 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_-2px_12px_rgba(0,23,42,0.06)] z-40 px-space-xl flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-caption text-caption text-on-surface-variant">就绪 · 当前配置与守护进程保持同步</span>
+</div>
+<div class="flex items-center gap-space-md">
+<button class="h-8 px-space-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg font-body-default text-body-default transition-colors" id="btn-reset-default" type="button">
+        恢复默认值
+      </button>
+<button class="h-8 px-space-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg font-body-default text-body-default transition-colors" id="btn-discard" type="button">
+        放弃未保存更改
+      </button>
+<button class="h-8 px-space-xl bg-secondary hover:bg-on-secondary-container text-on-secondary font-body-medium text-body-medium rounded-lg shadow-sm transition-all flex items-center gap-2 group" id="btn-save-settings" type="button">
+<span class="material-symbols-outlined text-[16px] group-hover:rotate-12 transition-transform">save</span>
+<span>保存设置</span>
+<span class="font-code-badge text-code-badge bg-black/15 text-on-secondary px-1.5 py-0.5 rounded ml-1">Ctrl+S</span>
+</button>
+</div>
+</div>
+<!-- ================= MODAL: 二次确认危险操作 ================= -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-200" id="confirm-modal">
+<div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-2xl flex flex-col gap-space-md transform scale-95 transition-transform duration-200" id="modal-card">
+<div class="flex items-center gap-space-sm text-error">
+<div class="w-10 h-10 rounded-full bg-error-container/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[24px]">warning</span>
+</div>
+<div class="flex flex-col">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold" id="modal-title">确认清除所有请求历史？</h3>
+<span class="font-caption text-caption text-on-surface-variant">此操作无法撤销</span>
+</div>
+</div>
+<p class="font-body-default text-body-default text-on-surface-variant leading-relaxed" id="modal-desc">
+        即将从本地数据库中永久删除超过 12,480 条历史调用追踪与 Token 消耗流水。正在进行的流式连接不会受影响。
+      </p>
+<div class="flex items-center justify-end gap-space-sm pt-2">
+<button class="h-8 px-space-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-default text-body-default rounded-lg transition-colors" id="btn-modal-cancel" type="button">
+          取消
+        </button>
+<button class="h-8 px-space-lg bg-error hover:bg-on-error-container text-on-error font-body-medium text-body-medium rounded-lg shadow-sm transition-colors flex items-center gap-1" id="btn-modal-confirm" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span id="modal-confirm-text">确认清空</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initSettingsDashboard() {
+    // 1. Tab Switching & Scrolling
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.getAttribute('data-tab-target');
+        const targetSection = document.getElementById(targetId);
+        
+        tabs.forEach(t => {
+          t.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'text-secondary', 'font-body-medium');
+          t.classList.add('hover:bg-surface-container-low', 'text-on-surface-variant', 'font-body-default');
+        });
+        tab.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-secondary', 'font-body-medium');
+        tab.classList.remove('hover:bg-surface-container-low', 'text-on-surface-variant', 'font-body-default');
+
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // 2. Real-time Settings Search Filtering
+    const searchInput = document.getElementById('settings-search');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const searchItems = document.querySelectorAll('.search-item');
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      if (query.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      searchItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(query)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      searchItems.forEach(item => item.style.display = '');
+    });
+
+    // 3. API Key Visibility & Regeneration
+    const keyInput = document.getElementById('api-key-input');
+    const toggleKeyBtn = document.getElementById('toggle-key-visibility');
+    const regenerateKeyBtn = document.getElementById('regenerate-key-btn');
+    const copyKeyBtn = document.getElementById('copy-key-btn');
+
+    toggleKeyBtn.addEventListener('click', () => {
+      const isPass = keyInput.type === 'password';
+      keyInput.type = isPass ? 'text' : 'password';
+      toggleKeyBtn.querySelector('.material-symbols-outlined').textContent = isPass ? 'visibility' : 'visibility_off';
+    });
+
+    regenerateKeyBtn.addEventListener('click', () => {
+      const randomHex = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+      keyInput.value = 'sk-ocean-local-' + randomHex;
+      triggerToast('API Key 已重新生成');
+    });
+
+    copyKeyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(keyInput.value).then(() => {
+        triggerToast('API Key 已复制到剪贴板');
+      });
+    });
+
+    // 4. Toggle Label Interactions
+    const toggleNoKey = document.getElementById('toggle-no-key');
+    const noKeyStatus = document.getElementById('no-key-status');
+    toggleNoKey.addEventListener('change', () => {
+      if (toggleNoKey.checked) {
+        noKeyStatus.textContent = '已开启 (免鉴权通行)';
+        noKeyStatus.className = 'font-body-default text-body-default text-secondary font-medium';
+      } else {
+        noKeyStatus.textContent = '已关闭 (强制 Bearer 鉴权)';
+        noKeyStatus.className = 'font-body-default text-body-default text-on-surface-variant font-medium';
+      }
+    });
+
+    const toggleLan = document.getElementById('toggle-lan-access');
+    const lanStatus = document.getElementById('lan-access-status');
+    toggleLan.addEventListener('change', () => {
+      if (toggleLan.checked) {
+        lanStatus.textContent = '已开启 (监听 0.0.0.0，局域网可达)';
+        lanStatus.className = 'font-body-default text-body-default text-secondary font-medium';
+      } else {
+        lanStatus.textContent = '已关闭 (安全绑定 127.0.0.1)';
+        lanStatus.className = 'font-body-default text-body-default text-on-surface-variant font-medium';
+      }
+    });
+
+    const toggleProxy = document.getElementById('toggle-proxy-enabled');
+    const proxyBadge = document.getElementById('proxy-status-badge');
+    toggleProxy.addEventListener('change', () => {
+      if (toggleProxy.checked) {
+        proxyBadge.textContent = '代理已接管全局出网';
+        proxyBadge.className = 'font-body-default text-body-default text-secondary font-medium';
+      } else {
+        proxyBadge.textContent = '直连模式 (已绕过代理)';
+        proxyBadge.className = 'font-body-default text-body-default text-on-surface-variant font-medium';
+      }
+    });
+
+    const toggleDebug = document.getElementById('toggle-debug-mode');
+    const debugStatus = document.getElementById('debug-status');
+    toggleDebug.addEventListener('change', () => {
+      if (toggleDebug.checked) {
+        debugStatus.textContent = '全量调试报文输出 (DEBUG 等级，增加磁盘 IO)';
+        debugStatus.className = 'font-body-default text-body-default text-secondary font-medium';
+      } else {
+        debugStatus.textContent = '常规标准日志 (INFO 等级)';
+        debugStatus.className = 'font-body-default text-body-default text-on-surface-variant';
+      }
+    });
+
+    // 5. Test Proxy Connectivity
+    const testProxyBtn = document.getElementById('test-proxy-btn');
+    const testProxyIcon = document.getElementById('test-proxy-icon');
+    const testProxyLabel = document.getElementById('test-proxy-label');
+    const pingBadge = document.getElementById('proxy-ping-badge');
+
+    testProxyBtn.addEventListener('click', () => {
+      testProxyBtn.disabled = true;
+      testProxyIcon.textContent = 'sync';
+      testProxyIcon.classList.add('animate-spin');
+      testProxyLabel.textContent = '正在握手...';
+
+      setTimeout(() => {
+        testProxyBtn.disabled = false;
+        testProxyIcon.textContent = 'network_ping';
+        testProxyIcon.classList.remove('animate-spin');
+        testProxyLabel.textContent = '测试代理连通性';
+        const latency = Math.floor(80 + Math.random() * 60);
+        pingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span><span class="font-code-badge text-code-badge font-semibold text-secondary">✔ 延迟 ${latency}ms 连通正常</span>`;
+        triggerToast(`节点探测成功，往返耗时 ${latency}ms`);
+      }, 700);
+    });
+
+    // 6. Danger Modals Confirmation
+    const modal = document.getElementById('confirm-modal');
+    const modalCard = document.getElementById('modal-card');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalConfirmText = document.getElementById('modal-confirm-text');
+    const btnCancel = document.getElementById('btn-modal-cancel');
+    const btnConfirm = document.getElementById('btn-modal-confirm');
+
+    const btnClearHistory = document.getElementById('trigger-clear-history-btn');
+    const btnResetAll = document.getElementById('trigger-reset-all-btn');
+
+    let currentAction = null;
+
+    function openModal(title, desc, confirmText, actionType) {
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      modalConfirmText.textContent = confirmText;
+      currentAction = actionType;
+
+      modal.classList.remove('pointer-events-none', 'opacity-0');
+      modalCard.classList.remove('scale-95');
+    }
+
+    function closeModal() {
+      modal.classList.add('pointer-events-none', 'opacity-0');
+      modalCard.classList.add('scale-95');
+    }
+
+    btnClearHistory.addEventListener('click', () => {
+      openModal(
+        '确认清空全部调用历史？',
+        '即将从本地数据库永久删除所有请求追踪与 Token 消耗流水。正在进行的流式连接不受影响。',
+        '确认清空',
+        'clear-history'
+      );
+    });
+
+    btnResetAll.addEventListener('click', () => {
+      openModal(
+        '确认恢复出厂配置？',
+        '所有监听端口、自定义代理路由、模型筛选规则与密钥将重置回默认状态，本地账号凭据将被卸载。',
+        '重置所有设置',
+        'reset-all'
+      );
+    });
+
+    btnCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    btnConfirm.addEventListener('click', () => {
+      closeModal();
+      if (currentAction === 'clear-history') {
+        triggerToast('✔ 历史调用记录已全部清空');
+      } else if (currentAction === 'reset-all') {
+        triggerToast('✔ 已恢复出厂预设配置');
+      }
+    });
+
+    // 7. Save Actions & Toast Notification
+    const saveBtn = document.getElementById('btn-save-settings');
+    const discardBtn = document.getElementById('btn-discard');
+    const resetDefaultBtn = document.getElementById('btn-reset-default');
+    const toast = document.getElementById('toast-notification');
+    let toastTimeout;
+
+    function triggerToast(customMsg) {
+      if (customMsg) {
+        toast.querySelector('.font-body-medium').textContent = customMsg;
+      }
+      clearTimeout(toastTimeout);
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+      }, 3000);
+    }
+
+    saveBtn.addEventListener('click', () => {
+      saveBtn.disabled = true;
+      const originalText = saveBtn.querySelector('span:nth-child(2)').textContent;
+      saveBtn.querySelector('span:nth-child(2)').textContent = '保存中...';
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.querySelector('span:nth-child(2)').textContent = originalText;
+        triggerToast('✔ 设置已保存并即时生效');
+      }, 350);
+    });
+
+    discardBtn.addEventListener('click', () => {
+      triggerToast('已丢弃所有未保存修改');
+    });
+
+    resetDefaultBtn.addEventListener('click', () => {
+      triggerToast('已重置为系统出厂预设推荐值');
+    });
+
+    // 8. Keyboard shortcut (Ctrl+S / Cmd+S)
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveBtn.click();
+      }
+    });
+  })();
+</script></main></div></body></html>

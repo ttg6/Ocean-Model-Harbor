@@ -1,0 +1,26 @@
+.tools/
+upstream/
+.gradle/
+.kotlin/
+**/build/
+dist/
+.test-data/
+*.log
+.idea/
+*.iml
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.db
+credentials*.json
+/store/
+/accounts/
+/logs/
+Thumbs.db
+desktop.ini
+# Real desktop context around the tray is local verification evidence.
+docs/ui-*/tray-next-to-icon.png

@@ -1,0 +1,32 @@
+开源致谢
+Ocean 模型港 · Windows 客户版本
+
+感谢您使用 Ocean 模型港。
+
+本程序基于开源项目 Android-AI-gateway 的 JVM 核心开发，并在此基础上完成
+Windows 桌面移植、Ocean 品牌界面、系统托盘控制和便携分发。
+
+我们感谢原作者夕白（GitHub：xibai6668）以及所有参与项目的贡献者。
+感谢他们公开源代码、分享实现思路，为多供应商账号管理和统一模型网关提供基础，
+让我们能够在已有成果上继续改进 Windows 使用体验。
+
+原项目：Android-AI-gateway
+项目仓库：https://github.com/xibai6668/Android-AI-gateway
+作者主页：https://github.com/xibai6668
+
+Ocean 模型港 Windows 版源代码：
+https://github.com/ttg6/Ocean-Model-Harbor
+
+原项目采用 MIT 许可证。原作者版权声明与许可证全文保留在本包的 LICENSE 文件中。
+原始版权声明：Copyright (c) 2026 夕白
+
+同时感谢本程序使用的开源组件及其维护者：
+Kotlin、Gson、NanoHTTPD、FlatLaf、JNA、JetBrains annotations、
+Error Prone annotations，以及 Eclipse Temurin / OpenJDK 运行环境。
+相关项目、版本和许可证说明见 THIRD-PARTY-NOTICES.md；
+运行环境的许可文件位于 runtime/legal。
+
+欢迎访问原项目仓库，通过 Star、反馈问题和参与贡献支持开源社区。
+感谢每一位分享代码、修复问题、完善文档和提供反馈的开发者与用户。
+
+Ocean 模型港 Windows 版

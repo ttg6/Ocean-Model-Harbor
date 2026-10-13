@@ -67,6 +67,18 @@ try {
     $x = [int]($rect.X + $rect.Width / 2); $y = [int]($rect.Y + $rect.Height / 2)
     $popupTitle = "$appName " + [char]0x00B7 + ' ' + [char]0x5FEB + [char]0x6377 + [char]0x63A7 + [char]0x5236
     function Open-TrayPopup {
+        # Terminated test instances can leave Explorer ghost icons until hovered.
+        # Refresh the target after hover, because removing a ghost shifts the grid.
+        for ($warm = 0; $warm -lt 4; $warm++) {
+            $liveIcon = Find-TrayIcon
+            if (!$liveIcon) { throw 'New-version tray icon disappeared.' }
+            $script:rect = $liveIcon.Current.BoundingRectangle
+            $script:x = [int]($rect.X + $rect.Width / 2); $script:y = [int]($rect.Y + $rect.Height / 2)
+            [OceanTraySmokeNative]::SetPhysicalCursorPos($x, $y) | Out-Null
+            Start-Sleep -Milliseconds 200
+            $refreshedIcon = Find-TrayIcon
+            if ($refreshedIcon -and $refreshedIcon.Current.BoundingRectangle.Equals($rect)) { break }
+        }
         [OceanTraySmokeNative]::SetPhysicalCursorPos($x, $y) | Out-Null
         [OceanTraySmokeNative]::mouse_event(8, 0, 0, 0, [UIntPtr]::Zero)
         Start-Sleep -Milliseconds 70

@@ -15,4 +15,6 @@ class ProviderHooks(
     val onLog: (String) -> Unit = {},
     /** 详细日志：provider 上报真实发给上游的内容（如 Antigravity 的 envelope），仅开启详细日志时生效。 */
     val onVerbose: (tag: String, text: String) -> Unit = { _, _ -> },
+    val onTokenSampleStart: (providerId: String, uid: String, model: String) -> Long = { _, _, _ -> 0L },
+    val onTokenSampleFinish: (ticket: Long, tokens: Long?, credits: Long?, complete: Boolean) -> Unit = { _, _, _, _ -> },
 )

@@ -6,7 +6,7 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 
 本项目是基于原仓库的 **Windows 移植与界面定制版本**，复用上游 Kotlin/JVM 核心和协议测试。上游基线：[15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce](https://github.com/xibai6668/Android-AI-gateway/commit/15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce)。完整来源与致谢见 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)，原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
 
-![Ocean 模型港 Windows 1.0.9 主界面](docs/windows-preview.png)
+![Ocean 模型港 Windows 1.0.10 主界面](docs/windows-preview.png)
 
 ## 下载与使用教程
 
@@ -31,9 +31,11 @@ Antigravity 首次使用需在「供应商与账号 → 更多操作 → Antigra
 ![中文托盘快捷控制窗口](docs/ocean-tray-menu.png)
 
 
-## Token 余额概览
+## Token 自动计算
 
-Windows 1.0.9 增加 TRAE 积分快照、按所选模型预计剩余 Tokens 和累计已用 Tokens。权益包与最近对话计费余额分别保存，防止刷新时混用口径；只汇总可用 TRAE 账号，标明未知账号、失败刷新和最早余额更新时间。换算系数按模型手动配置并注明依据，没有可靠比例时不生成数字。详细步骤与限制见 [Token 余额说明](docs/TOKEN-BUDGET.md)。
+Windows 1.0.10 默认从完整 TRAE 调用的用量和计费回报自动测算，无需手填兑换比例。首次完整调用建立基准，后续累计至少 2 积分扣减后显示预计剩余 Tokens。按账号、模型和忙闲时段分别保存近期样本，再汇总已测算的可用账号；并发、失败、缺失数据及积分收入等区间不纳入测算。点击“测算详情”可查看计算依据。
+
+两种余额独立保存，默认使用同口径的最近对话余额。结果仍是参考估算，外部消费、缓存和模型调价等可能影响准确性。步骤见 [Token 自动计算说明](docs/TOKEN-BUDGET.md)。
 
 ## 已移植功能
 
@@ -78,7 +80,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Windows.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\Package-Customer.ps1
 ```
 
-当前本地验证：核心 308 项、Windows 15 项，共 323 项测试通过。覆盖协议转换、JSON / SSE 转发、DPAPI、实际网关启停、导航与设置交互，以及托盘焦点、Esc 和外部点击关闭。客户包的文件通过逐项哈希校验，发布 EXE 的托盘右键已在 Windows 11 上实测。
+当前本地验证：核心 316 项、Windows 16 项，共 332 项测试通过。覆盖协议转换、JSON / SSE 转发、DPAPI、实际网关启停、导航与设置交互，以及托盘焦点、Esc 和外部点击关闭。客户包的文件通过逐项哈希校验，发布 EXE 的托盘右键已在 Windows 11 上实测。
 
 结构：`core` 是上游 JVM 核心；`desktop` 是 Windows 桌面界面和加密存储；`scripts` 包含构建工具初始化与打包脚本。原始架构说明见 `docs/UPSTREAM-ARCHITECTURE.md`；移植说明与验证记录见 `docs/WINDOWS-PORT.md`。
 

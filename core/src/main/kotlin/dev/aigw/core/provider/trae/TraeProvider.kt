@@ -41,6 +41,7 @@ class TraeProvider(
     private val defaultModel: () -> String,
     private val hooks: ProviderHooks = ProviderHooks(),
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val chatHost: String = TraeConstants.AGENT_HOST,
 ) : Provider, WebLoginSupport {
 
     override val id: String = ID
@@ -50,14 +51,14 @@ class TraeProvider(
         setOf(ProviderCapability.CREDIT_REFRESH, ProviderCapability.CHECKIN)
 
     private var authClient = TraeAuthClient(version())
-    private var chatClient = TraeChatClient(version())
+    private var chatClient = TraeChatClient(version(), host = chatHost)
     private var checkinClient = TraeCheckinClient(version())
     private var catalog = TraeModelCatalog(TraeChatClient(version()), nowMillis)
 
     /** 客户端版本号变更后重建各客户端，并让模型目录缓存失效。 */
     fun reconfigure() {
         authClient = TraeAuthClient(version())
-        chatClient = TraeChatClient(version())
+        chatClient = TraeChatClient(version(), host = chatHost)
         checkinClient = TraeCheckinClient(version())
         catalog = TraeModelCatalog(TraeChatClient(version()), nowMillis)
     }
@@ -90,14 +91,19 @@ class TraeProvider(
     override fun openChat(account: ProviderAccount, openAiBody: String): ChatCall {
         val trae = parseOrNull(account) ?: return FailedChatCall(401, "账号凭证无法解析")
         val model = resolveModel(requestedModelOf(openAiBody))
+        val meter = TraeTokenMeter(hooks, trae.uid, model)
         val call = try {
             chatClient.openStream(trae, openAiBody)
         } catch (e: TraeHttpException) {
+            meter.finish(false)
             return FailedChatCall(e.status, e.body)
+        } catch (e: Exception) {
+            meter.finish(false)
+            throw e
         }
-        if (call.status >= 400) return FailedChatCall(call.status, call.errorBody)
+        if (call.status >= 400) { meter.finish(false); call.close(); return FailedChatCall(call.status, call.errorBody) }
         // 上游 200 但没回 SSE（签名失效时常直接回 JSON 错误体）：errorBody 已带诊断信息
-        val stream = call.stream ?: return FailedChatCall(call.status, call.errorBody)
+        val stream = call.stream ?: run { meter.finish(false); call.close(); return FailedChatCall(call.status, call.errorBody) }
 
         if (isStreamingBody(openAiBody)) {
             val parser = SoloSseParser()
@@ -106,12 +112,13 @@ class TraeProvider(
                 source = stream,
                 transform = transform@{ line ->
                     val event = parser.feed(line) ?: return@transform emptyList()
+                    meter.accept(event)
                     report(event, trae.uid)
                     translator.translate(event)
                 },
-                onFinish = { translator.close() },
+                onFinish = { meter.finish(true); translator.close() },
             )
-            return StreamingChatCall(call.status, transformed) { call.close() }
+            return StreamingChatCall(call.status, transformed) { meter.finish(false); call.close() }
         }
 
         val parser = SoloSseParser()
@@ -121,15 +128,18 @@ class TraeProvider(
                 while (true) {
                     val line = reader.readLine() ?: break
                     val event = parser.feed(line) ?: continue
+                    meter.accept(event)
                     aggregator.accept(event)
                 }
             }
         } catch (e: Exception) {
+            meter.finish(false)
             return FailedChatCall(200, e.message ?: "读取上游流失败")
         } finally {
             call.close()
         }
         aggregator.soloCredits?.let { hooks.onBilling(id, trae.uid, it) }
+        meter.finish(true)
         val failure = aggregator.failure
         if (failure != null) {
             return StreamFailureChatCall(

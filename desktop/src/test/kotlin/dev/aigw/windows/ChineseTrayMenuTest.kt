@@ -36,27 +36,31 @@ class ChineseTrayMenuTest {
                     val screen = owner.graphicsConfiguration.bounds
                     menu.showAt(Point(screen.x + screen.width - 25, screen.y + screen.height - 25), false)
                 }
-                robot.waitForIdle(); robot.delay(250)
+                robot.waitForIdle()
                 // Windows may deny focus until this test performs a real user gesture.
                 // Acquire it before asserting, including on subsequent reopen attempts.
                 val header = menu.locationOnScreen
                 robot.mouseMove(header.x + 100, header.y + 20)
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-                robot.waitForIdle(); robot.delay(100)
+                robot.waitForIdle(); robot.delay(250)
                 SwingUtilities.invokeAndWait { assertTrue(menu.isVisible); assertTrue(menu.isFocused) }
             }
             show()
-            // A programmatic test launch may lack Windows foreground permission until a real gesture.
-            val header = menu.locationOnScreen
-            robot.mouseMove(header.x + 100, header.y + 20)
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-            robot.waitForIdle(); robot.delay(100)
-            robot.keyPress(KeyEvent.VK_ESCAPE); robot.keyRelease(KeyEvent.VK_ESCAPE)
-            robot.waitForIdle(); robot.delay(150)
+            // Other desktop windows can steal foreground while UI tests run.
+            // Reacquire with a genuine click and allow bounded delivery of the real Esc key.
+            for (attempt in 0 until 3) {
+                val header = menu.locationOnScreen
+                robot.mouseMove(header.x + 100, header.y + 20)
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+                robot.waitForIdle(); robot.delay(100)
+                robot.keyPress(KeyEvent.VK_ESCAPE); robot.keyRelease(KeyEvent.VK_ESCAPE)
+                robot.waitForIdle(); robot.delay(200)
+                if (!menu.isVisible) break
+            }
             SwingUtilities.invokeAndWait { assertFalse(menu.isVisible) }
             show()
             robot.mouseMove(150, 160)
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.delay(90); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.delay(200); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
             robot.waitForIdle(); robot.delay(150)
             SwingUtilities.invokeAndWait { assertFalse(menu.isVisible); assertFalse(owner.isVisible) }
             show() // Reopening must work after both dismissal paths.

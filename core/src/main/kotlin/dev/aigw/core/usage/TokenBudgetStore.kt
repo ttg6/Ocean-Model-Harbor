@@ -16,8 +16,9 @@ enum class TokenBudgetSource(val label: String) {
 data class TokenConversion(val tokensPerCredit: BigDecimal, val basis: String)
 data class TokenBudgetSettings(
     val modelId: String = "",
-    val source: TokenBudgetSource = TokenBudgetSource.ENTITLEMENT,
+    val source: TokenBudgetSource = TokenBudgetSource.BILLING,
     val conversions: Map<String, TokenConversion> = emptyMap(),
+    val automatic: Boolean = true,
 )
 
 data class TokenBudgetSummary(
@@ -29,12 +30,15 @@ data class TokenBudgetSummary(
     val observedAtMillis: Long?,
     val refreshFailures: Int,
     val conversion: TokenConversion?,
+    val estimatedAccounts: Int = 0,
+    val automaticCalls: Int = 0,
 ) {
     val partial: Boolean get() = knownAccounts < eligibleAccounts
 }
 
 /** Reference estimate only: no fabricated universal points/token exchange rate. No credentials stored. */
 class TokenBudgetStore(private val store: KeyValueStore) {
+    val calculator = AutomaticTokenCalculator(store)
     private data class Balance(val credits: Long, val observedAt: Long, val refreshFailed: Boolean = false)
     private var settings = loadSettings()
     private val balances = linkedMapOf<String, Balance>()
@@ -65,6 +69,7 @@ class TokenBudgetStore(private val store: KeyValueStore) {
         }
         val obj = JsonObject().apply {
             addProperty("modelId", updated.modelId); addProperty("source", updated.source.name)
+            addProperty("automatic", updated.automatic)
             add("conversions", JsonObject().apply {
                 for ((model, conversion) in updated.conversions) add(model, JsonObject().apply {
                     addProperty("tokensPerCredit", conversion.tokensPerCredit.toPlainString())
@@ -82,6 +87,8 @@ class TokenBudgetStore(private val store: KeyValueStore) {
             balances[key]?.let { persist(key, it.copy(refreshFailed = true)) }
             return
         }
+        if (source == TokenBudgetSource.BILLING) calculator.noteBalance(uid, credits)
+        if (source == TokenBudgetSource.ENTITLEMENT && balances[key]?.credits?.let { credits > it } == true) calculator.invalidate(uid)
         persist(key, Balance(credits.coerceAtLeast(0), now))
     }
 
@@ -99,22 +106,38 @@ class TokenBudgetStore(private val store: KeyValueStore) {
     }
 
     @Synchronized fun removeAccount(uid: String) {
+        calculator.removeAccount(uid)
         for (source in TokenBudgetSource.entries) {
             val key = balanceKey(uid, source)
             store.delete(key); balances.remove(key)
         }
     }
 
-    @Synchronized fun summary(accounts: List<AccountStatus>, providerEnabled: Boolean): TokenBudgetSummary {
+    @Synchronized fun summary(accounts: List<AccountStatus>, providerEnabled: Boolean, now: Long = System.currentTimeMillis()): TokenBudgetSummary {
         val eligible = accounts.filter { it.providerId == "trae" && it.usable && providerEnabled }
         val included = eligible.mapNotNull { balances[balanceKey(it.uid, settings.source)] }
         val sum = if (included.isEmpty()) null else included.fold(BigDecimal.ZERO) { total, balance -> total + balance.credits.toBigDecimal() }
         val credits = sum?.let(::clamp)
-        val conversion = settings.conversions[settings.modelId]
-        val estimate = if (sum != null && conversion != null) clamp(sum * conversion.tokensPerCredit) else null
+        val conversion = settings.conversions[settings.modelId].takeIf { !settings.automatic }
+        var calls = 0
+        var estimatedAccounts = 0
+        var automaticSum = BigDecimal.ZERO
+        if (settings.automatic) for (account in eligible) {
+            val balance = balances[balanceKey(account.uid, settings.source)] ?: continue
+            val rate = calculator.rate(account.uid, settings.modelId, now) ?: continue
+            automaticSum += balance.credits.toBigDecimal() * rate.tokensPerCredit
+            calls += rate.calls; estimatedAccounts++
+        }
+        val estimate = if (settings.automatic) automaticSum.takeIf { estimatedAccounts > 0 }?.let(::clamp)
+            else if (sum != null && conversion != null) clamp(sum * conversion.tokensPerCredit) else null
         val oldest = included.minOfOrNull { it.observedAt }?.takeIf { it > 0 }
         return TokenBudgetSummary(credits, estimate, eligible.size, included.size, oldest,
-            included.count { it.refreshFailed }, conversion)
+            included.count { it.refreshFailed }, conversion, if (settings.automatic) estimatedAccounts else if (conversion != null) included.size else 0, calls)
+    }
+
+    @Synchronized fun completeSample(id: Long, tokens: Long?, credits: Long?, completed: Boolean, now: Long) {
+        val model = calculator.finish(id, tokens, credits, completed, now) ?: return
+        if (settings.modelId.isEmpty() && settings.automatic) saveSettings(settings.copy(modelId = model, source = TokenBudgetSource.BILLING))
     }
 
     private fun persist(key: String, value: Balance) {
@@ -138,8 +161,10 @@ class TokenBudgetStore(private val store: KeyValueStore) {
                 }
             }
         }
+        val migrating = !obj.has("automatic")
         TokenBudgetSettings(obj.get("modelId")?.asString.orEmpty(),
-            runCatching { TokenBudgetSource.valueOf(obj.get("source").asString) }.getOrDefault(TokenBudgetSource.ENTITLEMENT), rates)
+            if (migrating) TokenBudgetSource.BILLING else runCatching { TokenBudgetSource.valueOf(obj.get("source").asString) }.getOrDefault(TokenBudgetSource.BILLING),
+            rates, obj.get("automatic")?.asBoolean ?: true)
     }.getOrDefault(TokenBudgetSettings())
 
     companion object {

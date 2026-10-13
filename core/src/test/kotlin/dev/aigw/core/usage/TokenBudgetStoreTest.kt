@@ -13,7 +13,7 @@ class TokenBudgetStoreTest {
     private fun configure(budget: TokenBudgetStore, source: TokenBudgetSource = TokenBudgetSource.ENTITLEMENT, rate: String = "1000.25") {
         budget.saveSettings(TokenBudgetSettings("trae/test-model", source, mapOf(
             "trae/test-model" to TokenConversion(BigDecimal(rate), "本地测试参考系数，非官方比例"),
-        )))
+        ), automatic = false))
     }
 
     @Test fun `estimate increases with credits decreases with spending and survives restart`() {
@@ -72,6 +72,7 @@ class TokenBudgetStoreTest {
     @Test fun `failed refresh retains previous balance and time but is visibly marked`() {
         val store = InMemoryKeyValueStore()
         val budget = TokenBudgetStore(store)
+        budget.saveSettings(budget.settings().copy(source = TokenBudgetSource.ENTITLEMENT))
         budget.observe("a", TokenBudgetSource.ENTITLEMENT, 100, true, 1000)
         budget.observe("a", TokenBudgetSource.ENTITLEMENT, 0, false, 2000)
         val result = TokenBudgetStore(store).summary(listOf(account()), true)
@@ -86,6 +87,7 @@ class TokenBudgetStoreTest {
         val budget = TokenBudgetStore(InMemoryKeyValueStore())
         val legacy = account().copy(credits = 200, creditsKnown = true, detail = "来自对话计费回报")
         budget.importLegacy(listOf(legacy))
+        budget.saveSettings(budget.settings().copy(source = TokenBudgetSource.ENTITLEMENT))
         assertNull(budget.summary(listOf(legacy), true).credits)
         budget.saveSettings(budget.settings().copy(source = TokenBudgetSource.BILLING))
         assertEquals(200L, budget.summary(listOf(legacy), true).credits)

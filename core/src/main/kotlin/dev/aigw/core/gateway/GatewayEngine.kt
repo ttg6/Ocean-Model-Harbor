@@ -202,6 +202,10 @@ class GatewayEngine(
             pool.updateCredits(providerId, uid, credits, known = true, detail = "来自对话计费回报")
             log("计费回报（$providerId/$uid）：可用额度=$credits")
         },
+        onTokenSampleStart = { providerId, uid, model ->
+            if (providerId == "trae" && pool.account(providerId, uid) != null) tokenBudgetStore.calculator.begin(uid, "trae/$model", nowMillis()) else 0L
+        },
+        onTokenSampleFinish = { ticket, tokens, credits, complete -> tokenBudgetStore.completeSample(ticket, tokens, credits, complete, nowMillis()) },
         onAccountError = { providerId, uid, error ->
             // 只有凭证失效才硬禁用；其它错误不再冷却账号，每次如实上报
             if (error.kind == ErrorKind.SESSION_DEAD) {
@@ -446,6 +450,9 @@ class GatewayEngine(
 
     fun accounts(providerId: String? = null): List<AccountStatus> = pool.statuses(providerId)
 
+    fun tokenBudgetSummary() = tokenBudgetStore.summary(accounts("trae"), providerSettings("trae").enabled, nowMillis())
+    fun tokenBudgetRate(uid: String, model: String) = tokenBudgetStore.calculator.rate(uid, model, nowMillis())
+
     /** 取账号的原始凭证（供供应商专属 UI 组件做凭证级操作，如校正设备指纹）。 */
     fun account(providerId: String, uid: String): ProviderAccount? = pool.account(providerId, uid)
 
@@ -556,6 +563,7 @@ class GatewayEngine(
     ): ProviderActionResult {
         val provider = registry.get(providerId) ?: return ProviderActionResult.failure("未知供应商")
         val account = pool.account(providerId, uid) ?: return ProviderActionResult.failure("账号不存在")
+        if (providerId == "trae") tokenBudgetStore.calculator.invalidate(uid)
         val result = provider.performAction(account, action, payload)
         if (result.ok) refreshCredits(providerId, uid)
         return result

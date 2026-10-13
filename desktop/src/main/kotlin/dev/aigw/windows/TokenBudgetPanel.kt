@@ -22,6 +22,8 @@ internal class TokenBudgetPanel(
     private val source = JComboBox(TokenBudgetSource.entries.toTypedArray()).apply {
         name = "token-budget-source"; preferredSize = Dimension(180, 34)
     }
+    private val automatic = JCheckBox("自动计算（实测）").apply { name = "token-budget-automatic"; isOpaque = false }
+    private val manual = JButton("高级参考").apply { addActionListener { configureConversion() } }
     private val credits = value("token-budget-credits")
     private val remaining = value("token-budget-remaining")
     private val used = value("token-budget-used")
@@ -31,6 +33,7 @@ internal class TokenBudgetPanel(
         font = Font("Microsoft YaHei UI", Font.PLAIN, 12); foreground = OceanUi.muted
     }
     private var updating = false
+    private var lastModel = engine.tokenBudgetStore.settings().modelId
 
     init {
         isOpaque = false
@@ -38,7 +41,8 @@ internal class TokenBudgetPanel(
         val ids = engine.registry.get("trae")?.listModels(null)?.models.orEmpty().map { "trae/${it.id}" }
         updating = true
         (listOf("") + ids + saved.conversions.keys + saved.modelId).distinct().forEach { model.addItem(it) }
-        model.selectedItem = saved.modelId; source.selectedItem = saved.source
+        model.selectedItem = saved.modelId; source.selectedItem = saved.source; automatic.isSelected = saved.automatic
+        manual.isEnabled = !saved.automatic
         updating = false
         add(JPanel(BorderLayout()).apply {
             isOpaque = false
@@ -51,8 +55,8 @@ internal class TokenBudgetPanel(
             isOpaque = false
             add(JPanel(GridLayout(2, 1, 0, 4)).apply {
                 isOpaque = false
-                add(row(JLabel("估算模型"), model, JButton("配置换算").apply { addActionListener { configureConversion() } }))
-                add(row(JLabel("余额来源"), source, JLabel("两种余额分开记录，按所选口径估算。")))
+                add(row(JLabel("估算模型"), model, JButton("测算详情").apply { addActionListener { showCalculation() } }))
+                add(row(automatic, JLabel("余额来源"), source, manual))
             }, BorderLayout.NORTH)
             add(JPanel(GridLayout(1, 3, 12, 0)).apply {
                 isOpaque = false
@@ -64,6 +68,7 @@ internal class TokenBudgetPanel(
         add(details, BorderLayout.SOUTH)
         model.addActionListener { if (!updating) saveSelection() }
         source.addActionListener { if (!updating) saveSelection() }
+        automatic.addActionListener { if (!updating) saveSelection() }
         refresh()
     }
 
@@ -71,12 +76,33 @@ internal class TokenBudgetPanel(
         val current = engine.tokenBudgetStore.settings()
         val id = model.editor.item?.toString()?.trim().orEmpty()
         try {
-            engine.tokenBudgetStore.saveSettings(current.copy(modelId = id, source = source.selectedItem as TokenBudgetSource))
+            engine.tokenBudgetStore.saveSettings(current.copy(modelId = id, source = source.selectedItem as TokenBudgetSource, automatic = automatic.isSelected))
         } catch (e: IllegalArgumentException) {
             updating = true; model.selectedItem = current.modelId; source.selectedItem = current.source; updating = false
             JOptionPane.showMessageDialog(this, e.message, "Token 估算配置", JOptionPane.ERROR_MESSAGE)
         }
         refresh()
+    }
+
+    private fun showCalculation() {
+        val config = engine.tokenBudgetStore.settings()
+        val text = buildString {
+            append("模型：${config.modelId.ifEmpty { "首次调用后自动选择" }}\n")
+            append("自动计算：有效调用的 Tokens ÷ 同期实际扣除的积分。\n")
+            append("按账号、模型和忙闲时段分别测算，再将已测算账号的预计余量相加。\n\n")
+            for (account in engine.accounts("trae").filter { it.usable }) {
+                val rate = engine.tokenBudgetRate(account.uid, config.modelId)
+                append("${account.nickname.ifEmpty { "TRAE 账号" }}：")
+                if (rate == null) append("等待有效样本\n")
+                else append("${rate.tokens.toPlainString()} Tokens ÷ ${rate.credits.toPlainString()} 积分 = ${rate.tokensPerCredit.stripTrailingZeros().toPlainString()} Tokens/积分，${rate.calls} 次配对调用\n")
+            }
+            append("\n正常使用即可采集，不会主动发起付费测试。首次完整调用建立基准，后续完整调用累计至少 2 积分扣减后开始估算。\n")
+            append("并发、失败、中断、积分增加、缺少 usage/计费回报或间隔超过 10 分钟的区间不纳入测算。仅使用近期 24 小时、同一忙闲时段的最近 20 组样本。\n")
+            append("同一账号在其他客户端的消费可能无法识别，估算仍会受缓存、输入输出比例和上游调价影响。")
+        }
+        JOptionPane.showMessageDialog(this, JScrollPane(JTextArea(text, 15, 65).apply {
+            isEditable = false; lineWrap = true; wrapStyleWord = true
+        }), "自动测算详情", JOptionPane.INFORMATION_MESSAGE)
     }
 
     private fun configureConversion() {
@@ -123,9 +149,14 @@ internal class TokenBudgetPanel(
 
     fun refresh() {
         val config = engine.tokenBudgetStore.settings()
-        val snapshot = engine.tokenBudgetStore.summary(engine.accounts("trae"), engine.providerSettings("trae").enabled)
+        if (config.modelId != lastModel) {
+            updating = true; model.selectedItem = config.modelId; updating = false; lastModel = config.modelId
+        }
+        updating = true; source.selectedItem = config.source; automatic.isSelected = config.automatic; updating = false
+        manual.isEnabled = !config.automatic
+        val snapshot = engine.tokenBudgetSummary()
         credits.text = snapshot.credits?.let(::format) ?: "未知"
-        remaining.text = snapshot.estimatedTokens?.let { "约 ${format(it)}" } ?: "暂无法估算"
+        remaining.text = snapshot.estimatedTokens?.let { "约 ${format(it)}" } ?: if (config.automatic) "采集样本中" else "暂无法估算"
         used.text = format(engine.callLogStore.totalStats().totalTokens)
         credits.toolTipText = snapshot.credits?.let { "${NumberFormat.getIntegerInstance().format(it)} 积分；${config.source.label}" }
         remaining.toolTipText = snapshot.estimatedTokens?.let { "参考估算：${NumberFormat.getIntegerInstance().format(it)} Tokens，非上游承诺额度" }
@@ -135,12 +166,14 @@ internal class TokenBudgetPanel(
         val flags = buildString {
             if (snapshot.partial) append("；部分余额未知，只显示已知合计")
             if (snapshot.refreshFailures > 0) append("；${snapshot.refreshFailures} 个账号刷新失败，保留上次数据")
+            if (config.automatic && snapshot.estimatedAccounts < snapshot.knownAccounts) append("；仅估算已有样本的账号")
         }
         val explanation = if (config.source == TokenBudgetSource.BILLING)
             "来自最近对话计费回报；签到、充值或外部消费需等下一次回报同步。"
         else "权益包可能包含其他通道额度，不保证等于当前模型可用积分；消费不一定立即反映。"
-        val basis = snapshot.conversion?.let { "自定义参考系数：${it.tokensPerCredit.stripTrailingZeros().toPlainString()} Tokens/积分；依据：${it.basis}" }
-            ?: "尚无参考换算系数，请选模型后点击“配置换算”；不使用未经验证的默认比例。"
+        val basis = if (config.automatic) "自动测算 ${snapshot.estimatedAccounts}/${snapshot.eligibleAccounts} 个账号，${snapshot.automaticCalls} 次配对调用；${when { snapshot.automaticCalls == 0 -> "正常使用 TRAE 模型，等待有效用量和积分扣减回报"; snapshot.automaticCalls < 3 -> "初步估算，继续正常使用即可积累样本"; else -> "近期实测，仅供参考" }}。"
+            else snapshot.conversion?.let { "自定义参考系数：${it.tokensPerCredit.stripTrailingZeros().toPlainString()} Tokens/积分；依据：${it.basis}" }
+                ?: "未设置手动参考值；开启“自动计算”即可从正常调用采集样本，无需手填比例。"
         details.text = "$coverage$flags · 最早余额更新时间：$time\n${config.source.label}：$explanation\n$basis"
     }
 

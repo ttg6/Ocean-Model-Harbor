@@ -6,11 +6,11 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 
 本项目是基于原仓库的 **Windows 移植与界面定制版本**，复用上游 Kotlin/JVM 核心和协议测试。上游基线：[15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce](https://github.com/xibai6668/Android-AI-gateway/commit/15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce)。完整来源与致谢见 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)，原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
 
-![Ocean 模型港 Windows 1.0.8 主界面](docs/windows-preview.png)
+![Ocean 模型港 Windows 1.0.9 主界面](docs/windows-preview.png)
 
 ## 下载与使用教程
 
-- [下载最新版 Windows 客户端](https://github.com/ttg6/Ocean-Model-Harbor/releases/latest)：选择 `Ocean-Model-Harbor-1.0.8-Customer.zip`，同时提供 SHA256 校验文件。
+- [下载最新版 Windows 客户端](https://github.com/ttg6/Ocean-Model-Harbor/releases/latest)：选择发布附件中的 `Customer.zip`，同时提供 SHA256 校验文件。
 - [完整中文使用教程](docs/Customer-Tutorial.txt)：账号登录、多账号添加、模型选择、ZCode 接入、代理与常见报错。
 - [快速开始](docs/Customer-Quick-Start.txt) · [开源致谢](ACKNOWLEDGEMENTS.md) · [Windows 移植说明](docs/WINDOWS-PORT.md)
 
@@ -29,6 +29,11 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 Antigravity 首次使用需在「供应商与账号 → 更多操作 → Antigravity OAuth 配置」填写自己有权使用的 Google 桌面应用 Client ID / Client Secret，再点击浏览器登录。本项目不内置上游应用的 OAuth 凭据，配置在本机加密保存。更换 OAuth 客户端后需要重新授权；OAuth 配置本身不赋予上游服务权限。详见 [配置说明](docs/ANTIGRAVITY-OAUTH.md)。
 
 ![中文托盘快捷控制窗口](docs/ocean-tray-menu.png)
+
+
+## Token 余额概览
+
+Windows 1.0.9 增加 TRAE 积分快照、按所选模型预计剩余 Tokens 和累计已用 Tokens。权益包与最近对话计费余额分别保存，防止刷新时混用口径；只汇总可用 TRAE 账号，标明未知账号、失败刷新和最早余额更新时间。换算系数按模型手动配置并注明依据，没有可靠比例时不生成数字。详细步骤与限制见 [Token 余额说明](docs/TOKEN-BUDGET.md)。
 
 ## 已移植功能
 
@@ -73,7 +78,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Windows.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\Package-Customer.ps1
 ```
 
-当前本地验证：核心 299 项、Windows 14 项，共 313 项测试通过。覆盖协议转换、JSON / SSE 转发、DPAPI、实际网关启停、导航与设置交互，以及托盘焦点、Esc 和外部点击关闭。客户包的文件通过逐项哈希校验，发布 EXE 的托盘右键已在 Windows 11 上实测。
+当前本地验证：核心 308 项、Windows 15 项，共 323 项测试通过。覆盖协议转换、JSON / SSE 转发、DPAPI、实际网关启停、导航与设置交互，以及托盘焦点、Esc 和外部点击关闭。客户包的文件通过逐项哈希校验，发布 EXE 的托盘右键已在 Windows 11 上实测。
 
 结构：`core` 是上游 JVM 核心；`desktop` 是 Windows 桌面界面和加密存储；`scripts` 包含构建工具初始化与打包脚本。原始架构说明见 `docs/UPSTREAM-ARCHITECTURE.md`；移植说明与验证记录见 `docs/WINDOWS-PORT.md`。
 

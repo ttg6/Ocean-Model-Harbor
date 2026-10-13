@@ -135,6 +135,7 @@ class GatewayEngine(
 ) {
     val settingsRepository = SettingsRepository(store)
     val pool = AccountPool(store, nowMillis)
+    val tokenBudgetStore = dev.aigw.core.usage.TokenBudgetStore(store).apply { importLegacy(pool.statuses("trae")) }
     val callLogStore = CallLogStore(store)
     val requestLog = RequestLog(store, nowMillis = nowMillis)
     val registry = ProviderRegistry()
@@ -195,6 +196,9 @@ class GatewayEngine(
 
     internal val hooks = ProviderHooks(
         onBilling = { providerId, uid, credits ->
+            if (providerId == "trae" && pool.account(providerId, uid) != null) {
+                tokenBudgetStore.observe(uid, dev.aigw.core.usage.TokenBudgetSource.BILLING, credits, true, nowMillis())
+            }
             pool.updateCredits(providerId, uid, credits, known = true, detail = "来自对话计费回报")
             log("计费回报（$providerId/$uid）：可用额度=$credits")
         },
@@ -453,6 +457,7 @@ class GatewayEngine(
 
     fun removeAccount(providerId: String, uid: String): Boolean {
         val removed = pool.remove(providerId, uid)
+        if (removed && providerId == "trae") tokenBudgetStore.removeAccount(uid)
         if (removed) log("已删除账号：$providerId/$uid")
         return removed
     }
@@ -487,11 +492,17 @@ class GatewayEngine(
         val account = pool.account(providerId, uid)
             ?: return CreditRefreshResult(providerId, uid, "", 0, false, "账号不存在")
         val info: CreditInfo = try {
-            provider.creditInfo(account)
-                ?: return CreditRefreshResult(providerId, uid, account.nickname, 0, false, "该供应商不支持额度刷新")
+            provider.creditInfo(account) ?: run {
+                if (providerId == "trae") tokenBudgetStore.observe(uid, dev.aigw.core.usage.TokenBudgetSource.ENTITLEMENT, 0, false, nowMillis())
+                return CreditRefreshResult(providerId, uid, account.nickname, 0, false, "该供应商不支持额度刷新")
+            }
         } catch (e: Exception) {
+            if (providerId == "trae") tokenBudgetStore.observe(uid, dev.aigw.core.usage.TokenBudgetSource.ENTITLEMENT, 0, false, nowMillis())
             logWarn("额度刷新异常（$providerId/${account.nickname.ifEmpty { uid }}）：${e.message}")
             return CreditRefreshResult(providerId, uid, account.nickname, 0, false, e.message ?: "刷新额度失败")
+        }
+        if (providerId == "trae" && pool.account(providerId, uid) != null) {
+            tokenBudgetStore.observe(uid, dev.aigw.core.usage.TokenBudgetSource.ENTITLEMENT, info.balance, info.known, nowMillis())
         }
         pool.updateCredits(providerId, uid, info.balance, info.known, info.detail)
         if (info.known) {

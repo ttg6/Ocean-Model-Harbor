@@ -47,6 +47,12 @@ class GatewayWindow(
     private val state = JLabel("网关已停止")
     private val endpoint = JTextField(engine.localUrl())
     private val metrics = List(4) { JLabel("0") }
+    private val tokenBudget = TokenBudgetPanel(engine) {
+        background("刷新 TRAE 积分（对话余额由下一次计费回报更新）") {
+            val failures = engine.refreshAllCredits("trae").filter { it.error.isNotEmpty() }
+            if (failures.isNotEmpty()) showText("积分刷新结果", failures.joinToString("\n") { it.error })
+        }
+    }
     private val accessHint = JLabel()
     private val sidebarState = JLabel()
     private val sidebarAccess = JLabel()
@@ -180,6 +186,8 @@ class GatewayWindow(
                 })
             }
         })
+        body.add(Box.createVerticalStrut(14))
+        body.add(OceanUi.surface(tokenBudget, 16))
         body.add(Box.createVerticalStrut(18))
         body.add(title("开始接入"))
         body.add(OceanUi.surface(vertical().apply {
@@ -297,6 +305,7 @@ class GatewayWindow(
     fun startGateway() = background("启动网关") { engine.start() }
 
     private fun refreshStatus() {
+        tokenBudget.refresh()
         val status = engine.status()
         state.text = if (status.running) "网关正在运行" else "网关已停止"
         state.foreground = if (status.running) teal else navy
@@ -356,6 +365,7 @@ class GatewayWindow(
     }
 
     private fun renderModels() {
+        tokenBudget.updateModels(models.map { it.fullId })
         val selectedId = modelTable.selectedRow.takeIf { it >= 0 }?.let { modelTable.getValueAt(it, 0).toString() }
         modelRows.rowCount = 0
         models.filter { it.fullId.contains(search.text, true) || it.model.name.contains(search.text, true) }.forEach {

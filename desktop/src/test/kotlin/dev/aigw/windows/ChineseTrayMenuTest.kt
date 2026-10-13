@@ -37,6 +37,12 @@ class ChineseTrayMenuTest {
                     menu.showAt(Point(screen.x + screen.width - 25, screen.y + screen.height - 25), false)
                 }
                 robot.waitForIdle(); robot.delay(250)
+                // Windows may deny focus until this test performs a real user gesture.
+                // Acquire it before asserting, including on subsequent reopen attempts.
+                val header = menu.locationOnScreen
+                robot.mouseMove(header.x + 100, header.y + 20)
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+                robot.waitForIdle(); robot.delay(100)
                 SwingUtilities.invokeAndWait { assertTrue(menu.isVisible); assertTrue(menu.isFocused) }
             }
             show()

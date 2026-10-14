@@ -5,6 +5,7 @@ Set-Location -LiteralPath $projectRoot
 $buildConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'build.gradle.kts') -Raw -Encoding UTF8
 if ($buildConfig -notmatch 'version = "(\d+\.\d+\.\d+)"') { throw 'Project version missing.' }
 $releaseVersion = $Matches[1]
+$releaseNotes = & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') -Version $releaseVersion
 $branding = Get-Content -LiteralPath (Join-Path $projectRoot 'branding.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $appName = $branding.name
 $archivePrefix = $branding.archivePrefix
@@ -46,6 +47,9 @@ try {
     Copy-Item -LiteralPath $iconPath -Destination (Join-Path $image 'Ocean.ico')
     Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination $image
     Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $image
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'CHANGELOG.md') -Destination $image
+    [IO.File]::WriteAllText((Join-Path $image $branding.changelogFile), $releaseNotes.HistoryText, [Text.UTF8Encoding]::new($true))
+    [IO.File]::WriteAllText((Join-Path $image $branding.releaseNotesFile), $releaseNotes.CurrentText, [Text.UTF8Encoding]::new($true))
     Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.md') -Destination $image
     Copy-Item -LiteralPath (Join-Path $projectRoot 'docs') -Destination (Join-Path $image 'docs') -Recurse
     $archiveName = "$archivePrefix-$releaseVersion-x64.zip"

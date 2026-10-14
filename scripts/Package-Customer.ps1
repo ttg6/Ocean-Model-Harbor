@@ -14,6 +14,14 @@ $tutorialName = $branding.tutorialFile
 if ([string]::IsNullOrWhiteSpace($tutorialName) -or [IO.Path]::GetFileName($tutorialName) -ne $tutorialName) {
     throw 'Tutorial filename missing or invalid.'
 }
+$historyName = $branding.changelogFile
+$releaseNotesName = $branding.releaseNotesFile
+foreach ($name in @($historyName, $releaseNotesName)) {
+    if ([string]::IsNullOrWhiteSpace($name) -or [IO.Path]::GetFileName($name) -ne $name) {
+        throw 'Release notes filename missing or invalid.'
+    }
+}
+$releaseNotes = & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') -Version $releaseVersion
 $archiveRoot = $appName + '/'
 $sourceImage = Join-Path $projectRoot ("dist/release-$releaseVersion/" + $appName)
 $exe = Join-Path $sourceImage ($appName + '.exe')
@@ -42,6 +50,8 @@ try {
     if (!(Test-Path -LiteralPath $tutorialPath)) { throw 'Customer tutorial missing.' }
     $tutorial = Get-Content -LiteralPath $tutorialPath -Raw -Encoding UTF8
     [IO.File]::WriteAllText((Join-Path $image $tutorialName), $tutorial, [Text.UTF8Encoding]::new($true))
+    [IO.File]::WriteAllText((Join-Path $image $historyName), $releaseNotes.HistoryText, [Text.UTF8Encoding]::new($true))
+    [IO.File]::WriteAllText((Join-Path $image $releaseNotesName), $releaseNotes.CurrentText, [Text.UTF8Encoding]::new($true))
     $fileHashes = @{}
     $manifest = Get-ChildItem -LiteralPath $image -Recurse -File -Force | Sort-Object FullName | ForEach-Object {
         $relative = $_.FullName.Substring($image.Length + 1).Replace('\', '/')
@@ -66,6 +76,7 @@ try {
         $required = @(($archiveRoot + $appName + '.exe'), ($archiveRoot + "app/desktop-$releaseVersion.jar"),
             ($archiveRoot + 'runtime/bin/server/jvm.dll'), ($archiveRoot + 'Quick-Start.txt'),
             ($archiveRoot + $thanksName), ($archiveRoot + $tutorialName), ($archiveRoot + 'Ocean.ico'), ($archiveRoot + 'LICENSE'),
+            ($archiveRoot + $historyName), ($archiveRoot + $releaseNotesName),
             ($archiveRoot + 'THIRD-PARTY-NOTICES.md'), ($archiveRoot + 'FILES-SHA256.txt'))
         foreach ($name in $required) {
             if (!$zip.GetEntry($name)) { throw "Missing package entry: $name" }

@@ -3,5 +3,7 @@
   "distributionName": "ocean-model-harbor",
   "archivePrefix": "Ocean-模型港",
   "acknowledgementsFile": "开源致谢.txt",
-  "tutorialFile": "使用教程.txt"
+  "tutorialFile": "使用教程.txt",
+  "changelogFile": "更新记录.txt",
+  "releaseNotesFile": "本次更新说明.txt"
 }

@@ -13,6 +13,7 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 - [下载最新版 Windows 客户端](https://github.com/ttg6/Ocean-Model-Harbor/releases/latest)：选择发布附件中的 `Customer.zip`，同时提供 SHA256 校验文件。
 - [完整中文使用教程](docs/Customer-Tutorial.txt)：账号登录、多账号添加、模型选择、ZCode 接入、代理与常见报错。
 - [快速开始](docs/Customer-Quick-Start.txt) · [开源致谢](ACKNOWLEDGEMENTS.md) · [Windows 移植说明](docs/WINDOWS-PORT.md)
+- [各版本更新记录](CHANGELOG.md)：客户包同时包含“本次更新说明.txt”和“更新记录.txt”。后续版本必须先记录变更才能打包；维护流程见 [发布说明](docs/RELEASING.md)。
 
 ## 运行便携版
 

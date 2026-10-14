@@ -6,7 +6,7 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 
 本项目是基于原仓库的 **Windows 移植与界面定制版本**，复用上游 Kotlin/JVM 核心和协议测试。上游基线：[15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce](https://github.com/xibai6668/Android-AI-gateway/commit/15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce)。完整来源与致谢见 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)，原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
 
-![Ocean 模型港 Windows 1.0.11 主界面](docs/windows-preview.png)
+![Ocean 模型港 Windows 1.0.12 主界面](docs/windows-preview.png)
 
 ## 下载与使用教程
 
@@ -31,9 +31,13 @@ Antigravity 首次使用需在「供应商与账号 → 更多操作 → Antigra
 ![中文托盘快捷控制窗口](docs/ocean-tray-menu.png)
 
 
+## ZCode 流式兼容
+
+Windows 1.0.12 修复 WorkBuddy 的 Kimi、DeepSeek 等模型在 ZCode 中重复出现大量“思考 · 持续了几秒”的兼容问题：流式输出只清理空的工具调用数组，保留真实思考内容、正文、工具调用及用量。使用国内 WorkBuddy 账号时选择 `codebuddy-cn/` 模型；国际版账号对应 `codebuddy-global/`。
+
 ## Token 自动计算
 
-Windows 1.0.11 默认从完整 TRAE 调用的用量和计费回报自动测算，无需手填兑换比例。首次完整调用建立基准，后续累计至少 2 积分扣减后显示预计剩余 Tokens。按账号、模型和忙闲时段分别保存近期样本，再汇总已测算的可用账号；并发、失败、缺失数据及积分收入等区间不纳入测算。点击“测算详情”可查看计算依据。
+Windows 1.0.12 默认从完整 TRAE 调用的用量和计费回报自动测算，无需手填兑换比例。首次完整调用建立基准，后续累计至少 2 积分扣减后显示预计剩余 Tokens。按账号、模型和忙闲时段分别保存近期样本，再汇总已测算的可用账号；并发、失败、缺失数据及积分收入等区间不纳入测算。点击“测算详情”可查看计算依据。
 
 两种余额独立保存，默认使用同口径的最近对话余额。1.0.11 在缺少全部对话余额时显示已有的“权益包参考积分”，并在“测算详情”中显示各账号缺少数据的原因；参考积分不会替代对话余额参与自动换算。结果仍是参考估算，外部消费、缓存和模型调价等可能影响准确性。步骤见 [Token 自动计算说明](docs/TOKEN-BUDGET.md)。
 

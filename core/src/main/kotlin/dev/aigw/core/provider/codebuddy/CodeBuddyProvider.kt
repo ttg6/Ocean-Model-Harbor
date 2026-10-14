@@ -14,6 +14,7 @@ import dev.aigw.core.provider.DeviceAuthTicket
 import dev.aigw.core.provider.DeviceCodeSupport
 import dev.aigw.core.provider.ErrorKind
 import dev.aigw.core.provider.FailedChatCall
+import dev.aigw.core.provider.LineTransformStream
 import dev.aigw.core.provider.OpenAiSseAggregator
 import dev.aigw.core.provider.Provider
 import dev.aigw.core.provider.ProviderAccount
@@ -48,6 +49,7 @@ import java.util.Locale
 class CodeBuddyProvider(
     private val region: () -> String = { REGION_CN },
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val chatHost: String? = null,
 ) : Provider, DeviceCodeSupport, dev.aigw.core.provider.RegionAwareSupport {
 
     override val id: String = ID
@@ -93,7 +95,7 @@ class CodeBuddyProvider(
         val prepared = prepareCodeBuddyBody(openAiBody)
 
         val conn = try {
-            open("${chatBase(credential)}$PATH_CHAT", credential, prepared, chatHeaders(credential))
+            open("${chatHost ?: chatBase(credential)}$PATH_CHAT", credential, prepared, chatHeaders(credential))
         } catch (e: Exception) {
             return FailedChatCall(0, e.message ?: "连接失败")
         }
@@ -113,7 +115,8 @@ class CodeBuddyProvider(
         val stream = conn.inputStream
         if (contentType.contains("event-stream", ignoreCase = true)) {
             if (streaming) {
-                return StreamingChatCall(status, stream) { conn.disconnect() }
+                val normalized = LineTransformStream(stream, { line -> listOf(normalizeCodeBuddySseLine(line) + "\n") })
+                return StreamingChatCall(status, normalized) { normalized.close(); conn.disconnect() }
             }
             val aggregated = try {
                 OpenAiSseAggregator.aggregate(stream, model)

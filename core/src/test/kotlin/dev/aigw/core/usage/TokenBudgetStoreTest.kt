@@ -8,6 +8,32 @@ import java.math.BigDecimal
 import kotlin.test.*
 
 class TokenBudgetStoreTest {
+    @Test fun `missing billing displays entitlement reference without converting across ledgers`() {
+        val store = InMemoryKeyValueStore()
+        var budget = TokenBudgetStore(store)
+        configure(budget, TokenBudgetSource.BILLING)
+        budget.observe("a", TokenBudgetSource.ENTITLEMENT, 100, true, 1000)
+        budget.observe("b", TokenBudgetSource.ENTITLEMENT, 50, true, 2000)
+        budget = TokenBudgetStore(store)
+        val accounts = listOf(account(), account("b"), account("c"))
+        val reference = budget.summary(accounts, true)
+        assertEquals(150L, reference.credits)
+        assertEquals(2, reference.knownAccounts)
+        assertTrue(reference.partial)
+        assertTrue(reference.referenceFallback)
+        assertEquals(TokenBudgetSource.ENTITLEMENT, reference.displaySource)
+        assertEquals(TokenBudgetSource.BILLING, budget.settings().source)
+        assertNull(reference.estimatedTokens)
+        budget.saveSettings(budget.settings().copy(automatic = true))
+        assertNull(budget.summary(accounts, true).estimatedTokens)
+        budget.observe("a", TokenBudgetSource.BILLING, 0, true, 3000)
+        val billing = budget.summary(accounts, true)
+        assertEquals(0L, billing.credits)
+        assertEquals(1, billing.knownAccounts)
+        assertFalse(billing.referenceFallback)
+        assertEquals(TokenBudgetSource.BILLING, billing.displaySource)
+    }
+
     private fun account(uid: String = "a", enabled: Boolean = true, disabled: Boolean = false, provider: String = "trae") =
         AccountStatus(provider, uid, uid, 0, false, "", "", disabled, enabled)
     private fun configure(budget: TokenBudgetStore, source: TokenBudgetSource = TokenBudgetSource.ENTITLEMENT, rate: String = "1000.25") {

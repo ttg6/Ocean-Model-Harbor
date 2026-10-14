@@ -15,6 +15,31 @@ import kotlin.test.*
 class TokenBudgetPanelTest {
     private fun descendants(c: Component): List<Component> = listOf(c) + if (c is Container) c.components.flatMap { descendants(it) } else emptyList()
 
+    @Test fun `missing billing shows labeled reference and switches back when billing arrives`() {
+        val dir = Files.createTempDirectory("ocean-reference-budget-")
+        val engine = GatewayEngine(WindowsKeyValueStore(dir.resolve("store")))
+        engine.pool.upsert(ProviderAccount("trae", "a", "参考余额测试", "{}"))
+        engine.tokenBudgetStore.observe("a", TokenBudgetSource.ENTITLEMENT, 120, true, 1000)
+        try {
+            SwingUtilities.invokeAndWait {
+                FlatLightLaf.setup()
+                val panel = TokenBudgetPanel(engine) {}
+                panel.refresh()
+                val labels = descendants(panel).filterIsInstance<JLabel>()
+                assertTrue(labels.any { it.text == "权益包参考积分" })
+                assertEquals("120", labels.single { it.name == "token-budget-credits" }.text)
+                assertNull(engine.tokenBudgetSummary().estimatedTokens)
+                val details = descendants(panel).filterIsInstance<JTextArea>().single { it.name == "token-budget-details" }
+                assertTrue(details.text.contains("暂显示权益包参考"))
+                engine.tokenBudgetStore.observe("a", TokenBudgetSource.BILLING, 80, true, 2000)
+                panel.refresh()
+                assertTrue(labels.any { it.text == "剩余积分（快照）" })
+                assertEquals("80", labels.single { it.name == "token-budget-credits" }.text)
+                assertFalse(details.text.contains("暂显示权益包参考"))
+            }
+        } finally { engine.stop(); dir.toFile().deleteRecursively() }
+    }
+
     @Test fun `automatic mode calculates from paired calls without entering a conversion and survives restart`() {
         val dir = Files.createTempDirectory("ocean-auto-budget-")
         val now = Instant.parse("2026-10-13T04:00:00Z").toEpochMilli()

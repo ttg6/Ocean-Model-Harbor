@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 
 class ChineseTrayMenuTest {
     @Test fun `tray control window accepts Escape and closes on an actual outside click with hidden owner`() {
-        val robot = Robot()
+        val robot = Robot().apply { autoDelay = 50 }
         lateinit var owner: JFrame
         lateinit var other: JFrame
         lateinit var menu: ChineseTrayMenu
@@ -32,17 +32,22 @@ class ChineseTrayMenuTest {
                 menu = ChineseTrayMenu(owner, {}, {}, {})
             }
             fun show() {
-                SwingUtilities.invokeAndWait {
-                    val screen = owner.graphicsConfiguration.bounds
-                    menu.showAt(Point(screen.x + screen.width - 25, screen.y + screen.height - 25), false)
+                for (attempt in 0 until 3) {
+                    SwingUtilities.invokeAndWait {
+                        val screen = owner.graphicsConfiguration.bounds
+                        menu.showAt(Point(screen.x + screen.width - 25, screen.y + screen.height - 25), false)
+                    }
+                    robot.waitForIdle()
+                    // A real click must acquire Windows foreground before keyboard delivery.
+                    val header = menu.locationOnScreen
+                    robot.mouseMove(header.x + 100, header.y + 20)
+                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.delay(80)
+                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+                    robot.waitForIdle(); robot.delay(150)
+                    var focused = false
+                    SwingUtilities.invokeAndWait { focused = menu.isVisible && menu.isFocused }
+                    if (focused) break
                 }
-                robot.waitForIdle()
-                // Windows may deny focus until this test performs a real user gesture.
-                // Acquire it before asserting, including on subsequent reopen attempts.
-                val header = menu.locationOnScreen
-                robot.mouseMove(header.x + 100, header.y + 20)
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-                robot.waitForIdle(); robot.delay(250)
                 SwingUtilities.invokeAndWait { assertTrue(menu.isVisible); assertTrue(menu.isFocused) }
             }
             show()
@@ -53,7 +58,7 @@ class ChineseTrayMenuTest {
                 robot.mouseMove(header.x + 100, header.y + 20)
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK); robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
                 robot.waitForIdle(); robot.delay(100)
-                robot.keyPress(KeyEvent.VK_ESCAPE); robot.keyRelease(KeyEvent.VK_ESCAPE)
+                robot.keyPress(KeyEvent.VK_ESCAPE); robot.delay(100); robot.keyRelease(KeyEvent.VK_ESCAPE)
                 robot.waitForIdle(); robot.delay(200)
                 if (!menu.isVisible) break
             }

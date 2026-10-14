@@ -7,6 +7,24 @@ import java.time.Instant
 import kotlin.test.*
 
 class AutomaticTokenCalculatorTest {
+    @Test fun `missing billing and usage have distinct persistent diagnostics and removal clears status`() {
+        val store = InMemoryKeyValueStore()
+        val calc = AutomaticTokenCalculator(store)
+        call(calc, start, null)
+        assertTrue(calc.status("a").contains("未回报对话积分余额"))
+        val restored = AutomaticTokenCalculator(store)
+        assertEquals(calc.status("a"), restored.status("a"))
+        assertNull(restored.rate("a", "trae/test", start + 200))
+        call(restored, start + 1000, 100, tokens = null)
+        assertTrue(restored.status("a").contains("未回报有效 Tokens"))
+        call(restored, start + 2000, 100)
+        assertTrue(restored.status("a").contains("已建立余额基准"))
+        call(restored, start + 3000, 99)
+        assertTrue(restored.status("a").contains("达到 2 积分"))
+        restored.removeAccount("a")
+        assertEquals("尚未收到新版的完整调用数据", AutomaticTokenCalculator(store).status("a"))
+    }
+
     private val start = Instant.parse("2026-10-13T04:00:00Z").toEpochMilli()
     private fun call(calc: AutomaticTokenCalculator, time: Long, balance: Long?, tokens: Long? = 2000,
         uid: String = "a", model: String = "trae/test", complete: Boolean = true) {

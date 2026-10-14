@@ -30,9 +30,14 @@ class AutomaticTokenCalculator(private val store: KeyValueStore) {
     private val anchors = mutableMapOf<String, Anchor>()
     private val tickets = mutableMapOf<Long, Ticket>()
     private val profiles = mutableMapOf<String, Profile>()
+    private val statuses = mutableMapOf<String, String>()
     private var nextId = 0L
 
     init {
+        for (key in store.keys(STATUS_PREFIX)) runCatching {
+            val obj = JsonParser.parseString(store.read(key)).asJsonObject
+            statuses[obj.get("uid").asString] = obj.get("message").asString
+        }
         for (key in store.keys(PREFIX)) runCatching {
             val obj = JsonParser.parseString(store.read(key)).asJsonObject
             val uid = obj.get("uid").asString; val model = obj.get("model").asString; val period = obj.get("period").asString
@@ -65,11 +70,24 @@ class AutomaticTokenCalculator(private val store: KeyValueStore) {
         if (ticket.invalid || !complete || tokens == null || tokens <= 0 || balance == null || balance < 0 ||
             now < ticket.at || now - ticket.at > MAX_GAP || tickets.values.any { it.uid == ticket.uid }) {
             invalidate(ticket.uid)
+            status(ticket.uid, when {
+                ticket.invalid || tickets.values.any { it.uid == ticket.uid } -> "并发或账号操作打断了测算"
+                !complete -> "上游请求未完整结束，未计入样本"
+                tokens == null || tokens <= 0 -> "上游未回报有效 Tokens 用量"
+                balance == null || balance < 0 -> "上游未回报对话积分余额，无法计算实际扣分"
+                else -> "调用间隔过长，需重新建立余额基准"
+            })
             return null
         }
         val currentPeriod = period(now)
         val previous = ticket.anchor
         var next = Anchor(balance, now, ticket.model, currentPeriod)
+        status(ticket.uid, when {
+            previous == null -> "已建立余额基准，等待后续积分扣减"
+            balance > previous.balance -> "积分增加，已重新建立余额基准"
+            currentPeriod != ticket.period || currentPeriod != previous.period -> "时段变化，已重新建立余额基准"
+            else -> "正在累积有效样本"
+        })
         if (previous != null && currentPeriod == ticket.period && currentPeriod == previous.period && balance <= previous.balance) {
             val sameModel = previous.model == ticket.model
             val totalTokens = tokens.toBigDecimal() + if (sameModel) previous.tokens else BigDecimal.ZERO
@@ -77,9 +95,11 @@ class AutomaticTokenCalculator(private val store: KeyValueStore) {
             val calls = 1 + if (sameModel) previous.calls else 0
             if (totalCredits >= MIN_SPEND) {
                 addSample(ticket.uid, ticket.model, currentPeriod, Sample(totalTokens, totalCredits, calls, now))
+                status(ticket.uid, "自动计算已更新")
             } else if (calls < MAX_CARRY_CALLS) {
                 // Integer balances can stay unchanged across several calls; retain their tokens.
                 next = next.copy(tokens = totalTokens, credits = totalCredits, calls = calls)
+                status(ticket.uid, "已配对 $calls 次调用，累计扣 ${totalCredits.toPlainString()} 积分；达到 2 积分后计算")
             }
         }
         // Increases, missing baselines and discount-boundary calls only establish a new baseline.
@@ -105,8 +125,18 @@ class AutomaticTokenCalculator(private val store: KeyValueStore) {
         return AutomaticTokenRate(tokens.divide(credits, 8, RoundingMode.DOWN), samples.sumOf { it.calls }, tokens, credits, samples.maxOf { it.at })
     }
 
+    @Synchronized fun status(uid: String): String = statuses[uid] ?: "尚未收到新版的完整调用数据"
+
+    private fun status(uid: String, message: String) {
+        statuses[uid] = message
+        store.write(STATUS_PREFIX + uid, JsonObject().apply {
+            addProperty("uid", uid); addProperty("message", message)
+        }.toString())
+    }
+
     @Synchronized fun removeAccount(uid: String) {
         invalidate(uid)
+        statuses.remove(uid); store.delete(STATUS_PREFIX + uid)
         tickets.entries.removeIf { it.value.uid == uid }
         profiles.entries.filter { it.value.uid == uid }.map { it.key }.forEach { profiles.remove(it); store.delete(it) }
     }
@@ -127,6 +157,7 @@ class AutomaticTokenCalculator(private val store: KeyValueStore) {
 
     companion object {
         private const val PREFIX = "token-budget/automatic/"
+        private const val STATUS_PREFIX = "token-budget/automatic-status/"
         private const val MAX_GAP = 10L * 60 * 1000
         private const val MAX_SAMPLE_AGE = 24L * 60 * 60 * 1000
         private const val MAX_SAMPLES = 20

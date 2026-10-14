@@ -32,6 +32,8 @@ data class TokenBudgetSummary(
     val conversion: TokenConversion?,
     val estimatedAccounts: Int = 0,
     val automaticCalls: Int = 0,
+    val displaySource: TokenBudgetSource = TokenBudgetSource.BILLING,
+    val referenceFallback: Boolean = false,
 ) {
     val partial: Boolean get() = knownAccounts < eligibleAccounts
 }
@@ -115,14 +117,18 @@ class TokenBudgetStore(private val store: KeyValueStore) {
 
     @Synchronized fun summary(accounts: List<AccountStatus>, providerEnabled: Boolean, now: Long = System.currentTimeMillis()): TokenBudgetSummary {
         val eligible = accounts.filter { it.providerId == "trae" && it.usable && providerEnabled }
-        val included = eligible.mapNotNull { balances[balanceKey(it.uid, settings.source)] }
+        val requested = eligible.mapNotNull { balances[balanceKey(it.uid, settings.source)] }
+        val referenceFallback = settings.source == TokenBudgetSource.BILLING && requested.isEmpty() &&
+            eligible.any { balances[balanceKey(it.uid, TokenBudgetSource.ENTITLEMENT)] != null }
+        val displaySource = if (referenceFallback) TokenBudgetSource.ENTITLEMENT else settings.source
+        val included = if (referenceFallback) eligible.mapNotNull { balances[balanceKey(it.uid, displaySource)] } else requested
         val sum = if (included.isEmpty()) null else included.fold(BigDecimal.ZERO) { total, balance -> total + balance.credits.toBigDecimal() }
         val credits = sum?.let(::clamp)
-        val conversion = settings.conversions[settings.modelId].takeIf { !settings.automatic }
+        val conversion = settings.conversions[settings.modelId].takeIf { !settings.automatic && !referenceFallback }
         var calls = 0
         var estimatedAccounts = 0
         var automaticSum = BigDecimal.ZERO
-        if (settings.automatic) for (account in eligible) {
+        if (settings.automatic && !referenceFallback) for (account in eligible) {
             val balance = balances[balanceKey(account.uid, settings.source)] ?: continue
             val rate = calculator.rate(account.uid, settings.modelId, now) ?: continue
             automaticSum += balance.credits.toBigDecimal() * rate.tokensPerCredit
@@ -132,7 +138,8 @@ class TokenBudgetStore(private val store: KeyValueStore) {
             else if (sum != null && conversion != null) clamp(sum * conversion.tokensPerCredit) else null
         val oldest = included.minOfOrNull { it.observedAt }?.takeIf { it > 0 }
         return TokenBudgetSummary(credits, estimate, eligible.size, included.size, oldest,
-            included.count { it.refreshFailed }, conversion, if (settings.automatic) estimatedAccounts else if (conversion != null) included.size else 0, calls)
+            included.count { it.refreshFailed }, conversion, if (settings.automatic) estimatedAccounts else if (conversion != null) included.size else 0,
+            calls, displaySource, referenceFallback)
     }
 
     @Synchronized fun completeSample(id: Long, tokens: Long?, credits: Long?, completed: Boolean, now: Long) {

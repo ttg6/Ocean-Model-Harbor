@@ -518,38 +518,13 @@ class CodeBuddyProvider(
         val obj = runCatching { JsonParser.parseString(text).asJsonObject }.getOrNull()
             ?: throw IllegalStateException("模型响应不是合法 JSON")
         if (obj.get("code")?.asLong != 0L) throw IllegalStateException("模型接口 code=${obj.get("code")}")
-        val data = obj.objOrNull("data") ?: return emptyList()
-
-        val cliIds = LinkedHashSet<String>()
-        data.arrayOrNull("agents")?.forEach { element ->
-            val agent = runCatching { element.asJsonObject }.getOrNull() ?: return@forEach
-            if (agent.get("name")?.asString == "cli") {
-                agent.arrayOrNull("models")?.forEach { cliIds.add(it.asString) }
-            }
-        }
-        val result = ArrayList<ProviderModel>()
-        val seen = HashSet<String>()
-        data.arrayOrNull("models")?.forEach { element ->
-            val item = runCatching { element.asJsonObject }.getOrNull() ?: return@forEach
-            val modelId = item.get("id")?.asString.orEmpty()
-            if (modelId.isEmpty() || seen.contains(modelId)) return@forEach
-            if (cliIds.isNotEmpty() && !cliIds.contains(modelId)) return@forEach
-            if (item.get("disabled")?.asBoolean == true) return@forEach
-            seen.add(modelId)
-            result.add(
-                ProviderModel(
-                    id = modelId,
-                    name = item.get("name")?.asString.orEmpty().ifEmpty { modelId },
-                    contextWindow = item.get("maxInputTokens")?.asLong ?: 0L,
-                ),
-            )
-        }
-        return result
+        return CodeBuddyModels.parse(obj)
     }
 
     // ------------------------------------------------------------------ HTTP
 
     private fun open(
+
         url: String,
         credential: Credential?,
         body: String?,
@@ -836,6 +811,41 @@ class CodeBuddyProvider(
         private const val CONNECT_TIMEOUT_MS = 30_000
         private const val READ_TIMEOUT_MS = 300_000
         private const val MAX_BODY_BYTES = 1 shl 20
+    }
+}
+
+/** WorkBuddy 模型目录解析；只接受 CLI agent 可见且未停用的模型。 */
+internal object CodeBuddyModels {
+    fun parse(root: JsonObject): List<ProviderModel> {
+        val data = root.objOrNull("data") ?: return emptyList()
+        val cliIds = LinkedHashSet<String>()
+        data.arrayOrNull("agents")?.forEach { element ->
+            val agent = runCatching { element.asJsonObject }.getOrNull() ?: return@forEach
+            if (agent.get("name")?.asString == "cli") {
+                agent.arrayOrNull("models")?.forEach { cliIds.add(it.asString) }
+            }
+        }
+        val result = ArrayList<ProviderModel>()
+        val seen = HashSet<String>()
+        data.arrayOrNull("models")?.forEach { element ->
+            val item = runCatching { element.asJsonObject }.getOrNull() ?: return@forEach
+            val modelId = item.get("id")?.asString.orEmpty()
+            if (modelId.isEmpty() || seen.contains(modelId)) return@forEach
+            if (cliIds.isNotEmpty() && !cliIds.contains(modelId)) return@forEach
+            if (item.get("disabled")?.asBoolean == true) return@forEach
+            seen.add(modelId)
+            val supportsVision = item.get("supportsImages")?.asBoolean == true &&
+                item.get("disabledMultimodal")?.asBoolean != true
+            result.add(
+                ProviderModel(
+                    id = modelId,
+                    name = item.get("name")?.asString.orEmpty().ifEmpty { modelId },
+                    contextWindow = item.get("maxInputTokens")?.asLong ?: 0L,
+                    supportsVision = supportsVision,
+                ),
+            )
+        }
+        return result
     }
 }
 

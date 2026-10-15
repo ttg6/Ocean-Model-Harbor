@@ -24,10 +24,13 @@ internal object OpenAiApi {
         for (routed in models) {
             data.add(JsonObject().apply {
                 addProperty("id", routed.fullId)
+                addProperty("name", routed.model.displayName)
+                addProperty("display_name", routed.model.displayName)
                 addProperty("object", "model")
                 addProperty("created", CREATED)
                 addProperty("owned_by", routed.providerId)
                 if (routed.model.contextWindow > 0) addProperty("context_length", routed.model.contextWindow)
+                addProperty("supports_vision", routed.model.supportsVision)
             })
         }
         return JsonObject().apply {

@@ -58,6 +58,7 @@ class LoomyProvider(
                     id = it.id,
                     name = it.name,
                     contextWindow = it.contextLength,
+                    supportsVision = it.attachment,
                     extra = buildMap {
                         if (it.reasoning) put("reasoning", "1")
                         if (it.toolCall) put("tool_call", "1")

@@ -445,7 +445,7 @@ class TraeModelCatalogTest {
     fun `解析模型目录响应`() {
         val raw = """
             {"config_info_list":[
-              {"config_name":"glm-5.2","display_config":{"display_name":"GLM 5.2"}},
+              {"config_name":"glm-5.2","display_config":{"display_name":"GLM 5.2","multimodal":true}},
               {"config_name":"kimi-k3","display_config":{"display_name":"Kimi K3"}},
               {"config_name":""}
             ]}
@@ -454,6 +454,8 @@ class TraeModelCatalogTest {
         assertEquals(2, models.size)
         assertEquals("glm-5.2", models[0].id)
         assertEquals("GLM 5.2", models[0].name)
+        assertTrue(models[0].supportsVision)
+        assertTrue(!models[1].supportsVision)
     }
 
     @Test

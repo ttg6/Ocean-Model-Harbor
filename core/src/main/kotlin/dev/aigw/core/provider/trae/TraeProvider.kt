@@ -69,7 +69,7 @@ class TraeProvider(
         val trae = account?.let { parseOrNull(it) }
         val models = catalog.models(trae)
         return ProviderModelCatalogView(
-            models = models.map { ProviderModel(it.id, it.name, it.contextWindow) },
+            models = models.map { ProviderModel(it.id, it.name, it.contextWindow, it.supportsVision) },
             fromFallback = catalog.fromFallback,
             error = catalog.lastError,
         )

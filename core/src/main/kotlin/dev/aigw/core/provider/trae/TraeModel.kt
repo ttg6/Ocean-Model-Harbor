@@ -11,6 +11,7 @@ data class TraeModel(
     val id: String,
     val name: String,
     val contextWindow: Long = 131_072,
+    val supportsVision: Boolean = false,
 )
 
 /**
@@ -37,8 +38,10 @@ internal object TraePayloadModels {
             val cfg = element as? JsonObject ?: continue
             val id = cfg.str("config_name")
             if (id.isEmpty()) continue
-            val display = cfg.objOrNull("display_config")?.str("display_name").orEmpty()
-            out.add(TraeModel(id = id, name = display.ifEmpty { id }))
+            val displayConfig = cfg.objOrNull("display_config")
+            val display = displayConfig?.str("display_name").orEmpty()
+            val supportsVision = runCatching { displayConfig?.get("multimodal")?.asBoolean == true }.getOrDefault(false)
+            out.add(TraeModel(id = id, name = display.ifEmpty { id }, supportsVision = supportsVision))
         }
         return out
     }

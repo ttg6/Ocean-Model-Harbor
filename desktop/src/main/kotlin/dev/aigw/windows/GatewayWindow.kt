@@ -370,8 +370,8 @@ class GatewayWindow(
         tokenBudget.updateModels(models.map { it.fullId })
         val selectedId = modelTable.selectedRow.takeIf { it >= 0 }?.let { modelTable.getValueAt(it, 0).toString() }
         modelRows.rowCount = 0
-        models.filter { it.fullId.contains(search.text, true) || it.model.name.contains(search.text, true) }.forEach {
-            modelRows.addRow(arrayOf(it.fullId, it.model.name, if (it.model.contextWindow > 0) it.model.contextWindow.toString() else "未知", latencies[it.fullId] ?: "未测试"))
+        models.filter { it.fullId.contains(search.text, true) || it.model.displayName.contains(search.text, true) }.forEach {
+            modelRows.addRow(arrayOf(it.fullId, it.model.displayName, if (it.model.contextWindow > 0) it.model.contextWindow.toString() else "未知", latencies[it.fullId] ?: "未测试"))
         }
         for (row in 0 until modelRows.rowCount) if (modelRows.getValueAt(row, 0) == selectedId) modelTable.setRowSelectionInterval(row, row)
     }

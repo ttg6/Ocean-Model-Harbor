@@ -9,8 +9,8 @@ import kotlin.test.assertTrue
 
 class OpenAiApiTest {
 
-    private fun routed(providerId: String, id: String, context: Long = 0) =
-        RoutedModel(providerId, providerId, ProviderModel(id = id, name = id, contextWindow = context))
+    private fun routed(providerId: String, id: String, context: Long = 0, vision: Boolean = false) =
+        RoutedModel(providerId, providerId, ProviderModel(id = id, name = id, contextWindow = context, supportsVision = vision))
 
     @Test
     fun `模型 id 带 provider 前缀且标注归属`() {
@@ -33,6 +33,16 @@ class OpenAiApiTest {
         assertEquals("loomy/MiniMax-M2.5", second.get("id").asString)
         assertEquals("loomy", second.get("owned_by").asString)
         assertTrue(!second.has("context_length"), "未知上下文长度不应编造")
+    }
+
+    @Test
+    fun `视觉模型名称带后缀但 id 保持可调用`() {
+        val body = JsonParser.parseString(OpenAiApi.modelList(listOf(routed("codebuddy-cn", "glm-5.3", 1_000_000, vision = true)))).asJsonObject
+        val model = body.getAsJsonArray("data")[0].asJsonObject
+        assertEquals("codebuddy-cn/glm-5.3", model.get("id").asString)
+        assertEquals("glm-5.3（视觉）", model.get("name").asString)
+        assertEquals("glm-5.3（视觉）", model.get("display_name").asString)
+        assertEquals(true, model.get("supports_vision").asBoolean)
     }
 
     @Test

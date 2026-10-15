@@ -80,3 +80,7 @@ Windows 测试覆盖 DPAPI 加密与重启恢复、包含冒号的存储键、�
 1.0.13 新增当前 Windows 用户登录后启动 Ocean：使用 HKCU Run 启动项，保存带引号的实际 EXE 路径与原有数据目录，开机启动时留在托盘。主窗口不可用或网关自动启动失败时显示窗口；重复开机启动静默退出。开启登录启动时默认勾选已有的网关自动启动选项，两者可独立保存。打开新版或移动后的程序会更新同一数据目录已有的启动项。Windows 可能延后执行；这里不提供登录前的系统服务。机制参考 [Microsoft Run 注册表说明](https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys)。
 
 1.0.13 验证：核心 321 项、Windows 21 项，共 342 项测试通过。新增隔离的 HKCU 注册表往返验证、中文与空格路径、升级目标更新、不同数据目录隔离，以及设置联动、独立保存、草稿恢复和写入失败测试。实际发布 EXE 在独立假数据目录模拟登录启动，验证隐藏运行、真实健康接口、重复启动静默退出和端口被占用时显示错误对话框；未重启或注销 Windows。
+
+1.0.14 为模型目录增加视觉能力标记。TRAE 读取 `display_config.multimodal`，WorkBuddy 读取 `supportsImages` 并尊重 `disabledMultimodal`，Loomy 读取图片输入/附件能力。桌面模型名称和 `/v1/models` 的显示名称统一追加“（视觉）”，真实模型 ID 不变；能力字段缺失及内置快照不推测，避免误标。
+
+1.0.14 验证：核心 323 项、Windows 21 项，共 344 项测试通过。新增目录能力解析、视觉后缀去重、API 显示字段及真实 ID 稳定性测试。

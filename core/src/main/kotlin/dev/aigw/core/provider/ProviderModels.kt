@@ -5,9 +5,19 @@ data class ProviderModel(
     val id: String,
     val name: String,
     val contextWindow: Long = 0,
+    /** 上游模型目录明确声明可接收图片输入；未知时保持 false，不做推测。 */
+    val supportsVision: Boolean = false,
     /** provider 私有的附加信息（Trae 的倍率说明、Loomy 的能力位等），由各自 UI 组件解读。 */
     val extra: Map<String, String> = emptyMap(),
-)
+) {
+    /** 面向界面和客户端的名称；模型 id 始终保持原样，避免后缀影响实际调用。 */
+    val displayName: String
+        get() = if (supportsVision && !name.endsWith(VISION_SUFFIX)) "$name$VISION_SUFFIX" else name
+
+    companion object {
+        const val VISION_SUFFIX = "（视觉）"
+    }
+}
 
 /** 模型目录视图。 */
 data class ProviderModelCatalogView(

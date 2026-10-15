@@ -24,6 +24,19 @@ class TraePayloadTest {
     }
 
     @Test
+    fun `Max 场景携带 is_max_mode 标志`() {
+        val out = JsonParser.parseString(
+            TraePayload.prepare(
+                """{"model":"glm-5.2","messages":[]}""",
+                function = TraeConstants.MAX_FUNCTION,
+                maxMode = true,
+            ),
+        ).asJsonObject
+        assertEquals("chat_v3", out.get("function").asString)
+        assertEquals(1, out.get("is_max_mode").asInt)
+    }
+
+    @Test
     fun `model 为空时用默认模型`() {
         val out = prepare("""{"messages":[]}""")
         assertEquals("glm-5.2", out.get("config_name").asString)
@@ -458,6 +471,22 @@ class TraeModelCatalogTest {
         assertEquals(1_000_000L, models[0].contextWindow)
         assertTrue(!models[1].supportsVision)
         assertEquals(131_072L, models[1].contextWindow, "未声明上下文时使用保守默认值")
+    }
+
+    @Test
+    fun `解析 Max 目录的 dev 与 max 上下文`() {
+        val raw = """
+            {"config_info_list":[
+              {"config_name":"kimi-k3","display_config":{"display_name":"Kimi K3","max_mode":true},
+               "context_window_tokens":{"dev":200000,"max":1000000},
+               "model_detail_list":[{"prompt_max_tokens":1000000}]}
+            ]}
+        """.trimIndent()
+        val model = TraePayloadModels.parse(raw, TraeConstants.MAX_FUNCTION).single()
+        assertEquals(200_000L, model.contextWindow)
+        assertEquals(1_000_000L, model.maxContextWindow)
+        assertTrue(model.supportsMaxMode)
+        assertEquals(1_000_000L, model.effectiveContextWindow)
     }
 
     @Test

@@ -10,8 +10,14 @@ object TraeConstants {
     const val CLIENT_ID = "en1oxy7wnw8j9n"
     const val APP_ID = "6eefa01c-1036-4c7e-9ca5-d891f63bfcd8"
 
-    /** 上游只放行该 function 取值，work / solo / work_lite 均无效。 */
+    /** 普通 SOLO 目录/请求使用的兼容通道。 */
     const val FUNCTION = "solo_work_lite"
+
+    /** TRAE Max 档所在的聊天场景；只有该场景支持 is_max_mode。 */
+    const val MAX_FUNCTION = "chat_v3"
+
+    /** 模型目录里的备用场景。 */
+    const val SECONDARY_FUNCTION = FUNCTION
 
     const val EP_CHAT = "/api/agent/v3/llm_utils_chat"
     const val EP_MODELS = "/api/ide/v1/get_detail_param"

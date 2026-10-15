@@ -21,12 +21,19 @@ import dev.aigw.core.util.str
 object TraePayload {
 
     /** 单遍改写；无法解析时原样返回，交由上游报错。 */
-    fun prepare(src: String, fallbackConfigName: String = TraeConstants.DEFAULT_CONFIG_NAME): String {
+    fun prepare(
+        src: String,
+        fallbackConfigName: String = TraeConstants.DEFAULT_CONFIG_NAME,
+        function: String = TraeConstants.FUNCTION,
+        maxMode: Boolean = false,
+    ): String {
         if (src.isEmpty()) return src
         val obj = runCatching { JsonParser.parseString(src).asJsonObject }.getOrNull() ?: return src
 
         obj.addProperty("stream", true)
-        obj.addProperty("function", TraeConstants.FUNCTION)
+        obj.addProperty("function", function)
+        if (maxMode && function == TraeConstants.MAX_FUNCTION) obj.addProperty("is_max_mode", 1)
+        else obj.remove("is_max_mode")
 
         rewriteMessages(obj)
 

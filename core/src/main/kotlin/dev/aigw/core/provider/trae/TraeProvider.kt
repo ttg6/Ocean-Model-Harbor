@@ -69,7 +69,20 @@ class TraeProvider(
         val trae = account?.let { parseOrNull(it) }
         val models = catalog.models(trae)
         return ProviderModelCatalogView(
-            models = models.map { ProviderModel(it.id, it.name, it.contextWindow, it.supportsVision) },
+            models = models.map {
+                ProviderModel(
+                    id = it.id,
+                    name = it.name,
+                    contextWindow = it.effectiveContextWindow,
+                    supportsVision = it.supportsVision,
+                    extra = mapOf(
+                        "default_context_window" to it.contextWindow.toString(),
+                        "max_context_window" to it.maxContextWindow.toString(),
+                        "supports_max_mode" to it.supportsMaxMode.toString(),
+                        "scene" to it.scene,
+                    ),
+                )
+            },
             fromFallback = catalog.fromFallback,
             error = catalog.lastError,
         )
@@ -92,14 +105,33 @@ class TraeProvider(
         val trae = parseOrNull(account) ?: return FailedChatCall(401, "账号凭证无法解析")
         val model = resolveModel(requestedModelOf(openAiBody))
         val meter = TraeTokenMeter(hooks, trae.uid, model)
-        val call = try {
-            chatClient.openStream(trae, openAiBody)
+        val modelInfo = catalog.model(trae, model)
+        val function = modelInfo?.scene ?: TraeConstants.SECONDARY_FUNCTION
+        val maxMode = modelInfo?.supportsMaxMode == true && function == TraeConstants.MAX_FUNCTION
+        var call = try {
+            chatClient.openStream(trae, openAiBody, function = function, maxMode = maxMode)
         } catch (e: TraeHttpException) {
             meter.finish(false)
             return FailedChatCall(e.status, e.body)
         } catch (e: Exception) {
             meter.finish(false)
             throw e
+        }
+        // Max 权限可能按账号分别授予。目录通常由首个账号拉取，因此某个后续账号
+        // 被拒绝时先在同一账号回退普通场景，避免把可用账号误判成断线并触发重连。
+        if (maxMode && call.status >= 400) {
+            call.close()
+            call = try {
+                chatClient.openStream(
+                    trae,
+                    openAiBody,
+                    function = TraeConstants.SECONDARY_FUNCTION,
+                    maxMode = false,
+                )
+            } catch (e: Exception) {
+                meter.finish(false)
+                throw e
+            }
         }
         if (call.status >= 400) { meter.finish(false); call.close(); return FailedChatCall(call.status, call.errorBody) }
         // 上游 200 但没回 SSE（签名失效时常直接回 JSON 错误体）：errorBody 已带诊断信息

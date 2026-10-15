@@ -39,7 +39,11 @@ class TraeModelCatalog(
         }
 
         return try {
-            val fetched = client.fetchModels(account)
+            // chat_v3 是 TRAE Max 档的目录；solo_work_lite 作为兼容回退。
+            // 两个场景会有部分重复模型，合并时保留上下文更大的那一项。
+            val primary = runCatching { client.fetchModels(account, TraeConstants.MAX_FUNCTION) }.getOrElse { emptyList() }
+            val secondary = runCatching { client.fetchModels(account, TraeConstants.SECONDARY_FUNCTION) }.getOrElse { emptyList() }
+            val fetched = merge(primary, secondary)
             if (fetched.isEmpty()) {
                 lastFailureAt = now
                 lastError = "上游返回空模型列表"
@@ -61,11 +65,30 @@ class TraeModelCatalog(
         }
     }
 
+    private fun merge(primary: List<TraeModel>, secondary: List<TraeModel>): List<TraeModel> {
+        val merged = LinkedHashMap<String, TraeModel>()
+        fun add(model: TraeModel) {
+            val key = model.id.trim().lowercase()
+            if (key.isEmpty()) return
+            val old = merged[key]
+            if (old == null || score(model) > score(old)) merged[key] = model
+        }
+        primary.forEach(::add)
+        secondary.forEach(::add)
+        return merged.values.toList()
+    }
+
+    private fun score(model: TraeModel): Long = maxOf(model.effectiveContextWindow, model.maxContextWindow)
+
     /** 强制下次重新拉取（界面的刷新按钮用）。 */
     fun invalidate() {
         fetchedAt = 0L
         lastFailureAt = 0L
     }
+
+    /** 按 config_name 查找模型，供对话请求选择场景和 Max 档。 */
+    fun model(account: TraeAccount?, id: String): TraeModel? =
+        models(account).firstOrNull { it.id.equals(id, ignoreCase = true) }
 
     companion object {
         const val TTL_MILLIS = 60L * 60 * 1000

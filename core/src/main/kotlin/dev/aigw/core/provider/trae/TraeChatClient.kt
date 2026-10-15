@@ -27,8 +27,13 @@ class TraeChatClient(
      * 上游 200 但没回 event-stream（签名失效时常直接回 JSON 错误体）时，
      * 不能把非 SSE 字节流交给 SSE 解析器——那会被静默忽略成「成功但零输出」。
      */
-    fun openStream(account: TraeAccount, openAiBody: String): TraeChatCall {
-        val payload = TraePayload.prepare(openAiBody)
+    fun openStream(
+        account: TraeAccount,
+        openAiBody: String,
+        function: String = TraeConstants.FUNCTION,
+        maxMode: Boolean = false,
+    ): TraeChatCall {
+        val payload = TraePayload.prepare(openAiBody, function = function, maxMode = maxMode)
         val conn = TraeHttp.post(
             url = host + TraeConstants.EP_CHAT,
             body = payload,
@@ -54,8 +59,8 @@ class TraeChatClient(
     }
 
     /** 拉取模型目录（`get_detail_param`）。 */
-    fun fetchModels(account: TraeAccount): List<TraeModel> {
-        val body = TraePayloadModels.requestBody()
+    fun fetchModels(account: TraeAccount, function: String = TraeConstants.FUNCTION): List<TraeModel> {
+        val body = TraePayloadModels.requestBody(function)
         val conn = TraeHttp.post(
             url = host + TraeConstants.EP_MODELS,
             body = body,
@@ -68,6 +73,6 @@ class TraeChatClient(
         if (status >= 400) {
             throw TraeHttpException(status, TraeErrors.fromStatus(status, raw), raw, TraeErrors.extractCode(raw))
         }
-        return TraePayloadModels.parse(raw)
+        return TraePayloadModels.parse(raw, function)
     }
 }

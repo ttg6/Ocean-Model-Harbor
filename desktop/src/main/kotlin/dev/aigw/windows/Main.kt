@@ -31,13 +31,16 @@ fun main(args: Array<String>) {
     val channel = FileChannel.open(data.toPath().resolve("instance.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
     val lock = channel.tryLock()
     if (lock == null) {
-        JOptionPane.showMessageDialog(null, "该数据目录的程序已经运行。请从系统托盘打开窗口。", AppIdentity.NAME, JOptionPane.INFORMATION_MESSAGE)
+        if ("--startup" !in args) JOptionPane.showMessageDialog(null, "该数据目录的程序已经运行。请从系统托盘打开窗口。", AppIdentity.NAME, JOptionPane.INFORMATION_MESSAGE)
         channel.close()
         return
     }
     try {
         val store = WindowsKeyValueStore(data.toPath().resolve("store"))
         val engine = GatewayEngine(store)
+        val loginStartup = WindowsLoginStartup(data)
+        if ("--startup" !in args) runCatching { loginStartup.refreshEnabledEntry() }
+            .onFailure { engine.requestLog.warn("更新开机启动入口失败：${it.message}") }
         if (store.read("windows/initialized") == null) {
             engine.updateSettings(engine.settings().copy(exposeLan = false))
             store.write("windows/initialized", "true")
@@ -46,12 +49,12 @@ fun main(args: Array<String>) {
             engine.stopCallbackServer(); engine.stop(); lock.release(); channel.close()
         })
         SwingUtilities.invokeLater {
-            val window = GatewayWindow(engine, data)
+            val window = GatewayWindow(engine, data, loginStartup = loginStartup)
             option("--window-size")?.split("x")?.takeIf { it.size == 2 }?.let { dimensions ->
                 val w = dimensions[0].toIntOrNull(); val h = dimensions[1].toIntOrNull()
                 if (w != null && h != null) window.setSize(w.coerceAtLeast(940), h.coerceAtLeast(650))
             }
-            window.isVisible = true
+            window.showOnLaunch("--startup" in args)
             option("--screenshot")?.let { window.saveScreenshot(File(it)) }
             option("--banner-screenshot")?.let { window.saveBannerScreenshot(File(it)) }
             option("--tray-screenshot")?.let { window.saveTrayScreenshot(File(it)) }

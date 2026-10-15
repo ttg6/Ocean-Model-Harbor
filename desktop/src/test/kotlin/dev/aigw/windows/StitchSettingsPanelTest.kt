@@ -20,12 +20,21 @@ class StitchSettingsPanelTest {
         val engine = GatewayEngine(WindowsKeyValueStore(dir.resolve("store")))
         val worker = Executors.newSingleThreadExecutor()
         val errors = CopyOnWriteArrayList<String>()
+        var loginEnabled = false
+        var loginFailure = false
+        val loginStartup = object : LoginStartup {
+            override fun isEnabled() = loginEnabled
+            override fun setEnabled(enabled: Boolean) {
+                if (loginFailure) error("模拟启动项保存失败")
+                loginEnabled = enabled
+            }
+        }
         lateinit var panel: StitchSettingsPanel
         init {
             engine.updateSettings(engine.settings().copy(exposeLan = false))
             SwingUtilities.invokeAndWait {
                 FlatLightLaf.setup()
-                panel = StitchSettingsPanel(engine, dir.toFile(), { _, task -> worker.submit { try { task() } catch (e: Exception) { errors += e.message.orEmpty() } } }, { errors += it }, { false }, {})
+                panel = StitchSettingsPanel(engine, dir.toFile(), { _, task -> worker.submit { try { task() } catch (e: Exception) { errors += e.message.orEmpty() } } }, { errors += it }, { false }, {}, loginStartup)
             }
         }
         fun all(c: Component = panel): List<Component> = listOf(c) + if (c is Container) c.components.flatMap { all(it) } else emptyList()
@@ -38,6 +47,52 @@ class StitchSettingsPanelTest {
             assertTrue(condition()); assertTrue(errors.isEmpty(), errors.joinToString())
         }
         override fun close() { worker.shutdownNow(); engine.stop(); SwingUtilities.invokeAndWait {}; dir.toFile().deleteRecursively() }
+    }
+
+    @Test fun `login startup and gateway startup save independently with defaults and discard remaining drafts`() {
+        Fixture().use { f ->
+            SwingUtilities.invokeAndWait {
+                f.toggle("开机启动 Ocean").doClick()
+                assertTrue(f.toggle("打开程序时自动启动网关").isSelected)
+                assertFalse(f.loginEnabled)
+                f.button("保存设置").doClick()
+            }
+            f.await { f.loginEnabled && f.engine.store().read("windows/autoStart") == "true" }
+            SwingUtilities.invokeAndWait {
+                f.button("恢复默认值").doClick()
+                assertFalse(f.toggle("开机启动 Ocean").isSelected)
+                assertTrue(f.loginEnabled)
+                f.button("放弃修改").doClick()
+                assertTrue(f.toggle("开机启动 Ocean").isSelected)
+                f.toggle("打开程序时自动启动网关").doClick()
+                f.button("保存设置").doClick()
+            }
+            f.await { f.loginEnabled && f.engine.store().read("windows/autoStart") == "false" }
+            SwingUtilities.invokeAndWait {
+                f.toggle("开机启动 Ocean").doClick()
+                f.toggle("打开程序时自动启动网关").doClick()
+                f.button("保存设置").doClick()
+            }
+            f.await { !f.loginEnabled && f.engine.store().read("windows/autoStart") == "true" }
+        }
+    }
+
+    @Test fun `failed Windows startup write does not silently save gateway startup or other settings`() {
+        Fixture().use { f ->
+            val original = f.engine.settings().port
+            f.loginFailure = true
+            SwingUtilities.invokeAndWait {
+                f.toggle("开机启动 Ocean").doClick()
+                f.input("监听端口").text = "18791"
+                f.button("保存设置").doClick()
+            }
+            val deadline = System.currentTimeMillis() + 5000
+            while (f.errors.isEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(20)
+            assertTrue(f.errors.any { it.contains("启动项保存失败") })
+            assertFalse(f.loginEnabled)
+            assertNotEquals("true", f.engine.store().read("windows/autoStart"))
+            assertEquals(original, f.engine.settings().port)
+        }
     }
 
     @Test fun `save applies real authentication and changed port and persists preferences`() {

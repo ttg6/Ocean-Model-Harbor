@@ -35,6 +35,7 @@ class GatewayWindow(
             "TRAE 登录与授权", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
             null, arrayOf("继续授权", "取消"), "继续授权") == 0
     },
+    private val loginStartup: LoginStartup = WindowsLoginStartup(dataDir),
 ) : JFrame("${AppIdentity.NAME} ${AppIdentity.VERSION} · Windows x64") {
     companion object {
         const val TRAE_INVITE_URL = "https://www.trae.cn/events/code-fission/BX52NUATZKGF?utm_source=copy_link&utm_medium=code_fission"
@@ -301,7 +302,8 @@ class GatewayWindow(
     }
 
     private lateinit var stitchSettings: StitchSettingsPanel
-    private fun settingsPage(): JPanel = StitchSettingsPanel(engine, dataDir, ::background, ::error, ::confirm, ::advancedFailover).also { stitchSettings = it }
+    private fun settingsPage(): JPanel = StitchSettingsPanel(engine, dataDir, ::background, ::error, ::confirm, ::advancedFailover, loginStartup).also { stitchSettings = it }
+    fun showOnLaunch(startup: Boolean) { isVisible = !startup || tray == null }
     fun startGateway() = background("启动网关") { engine.start() }
 
     private fun refreshStatus() {
@@ -710,7 +712,10 @@ class GatewayWindow(
 
     private fun copy(value: String) { Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null); footer.text = "已复制：$value" }
     private fun browse(url: String) { browserOpener(url) }
-    private fun error(message: String) = JOptionPane.showMessageDialog(this, message, "操作失败", JOptionPane.ERROR_MESSAGE)
+    private fun error(message: String) {
+        if (!isVisible) { isVisible = true; extendedState = NORMAL; toFront() }
+        JOptionPane.showMessageDialog(this, message, "操作失败", JOptionPane.ERROR_MESSAGE)
+    }
     private fun confirm(message: String) = JOptionPane.showConfirmDialog(this, message, "确认操作", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION
     private fun showText(title: String, text: String) {
         SwingUtilities.invokeLater { JOptionPane.showMessageDialog(this, JScrollPane(JTextArea(text, 20, 70).apply { isEditable = false; lineWrap = true; wrapStyleWord = true }), title, JOptionPane.INFORMATION_MESSAGE) }

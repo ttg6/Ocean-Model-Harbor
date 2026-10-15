@@ -24,6 +24,7 @@ internal class StitchSettingsPanel(
     private val showError: (String) -> Unit,
     private val confirm: (String) -> Boolean,
     private val failover: () -> Unit,
+    private val loginStartup: LoginStartup = WindowsLoginStartup(dataDir),
 ) : JPanel(BorderLayout(18, 16)) {
     private val port = input("监听端口")
     private val apiKey = JPasswordField().apply { name = "网关 API Key"; styleInput(this) }
@@ -46,6 +47,7 @@ internal class StitchSettingsPanel(
     private val usable = OceanUi.switch("隐藏非对话模型", false)
     private val verbose = OceanUi.switch("保存详细调用日志", false)
     private val autoStart = OceanUi.switch("打开程序时自动启动网关", false)
+    private val startAtLogin = OceanUi.switch("开机启动 Ocean", false)
     private val rotate = JSpinner(SpinnerNumberModel(3, 1, 20, 1)).apply { name = "最多换号次数"; styleInput(this) }
     private val retention = JSpinner(SpinnerNumberModel(30, 1, 3650, 1)).apply { name = "记录保留天数"; styleInput(this) }
     private val search = input("搜索设置").apply {
@@ -165,7 +167,8 @@ internal class StitchSettingsPanel(
         section("偏好与数据", "运行策略与本地存储管理") { body ->
             row(body, "模型列表展示策略", "隐藏上游非对话内部条目。账号权限与额度仍由供应商决定。", usable)
             row(body, "详细调用日志", "保存完整调用内容以便排查，会增加存储占用。", verbose)
-            row(body, "程序启动时启动网关", "每次打开桌面程序时自动启服务，不是 Windows 开机自启。", autoStart)
+            row(body, "开机启动 Ocean", "登录当前 Windows 用户后启动并留在托盘。开启时默认同时勾选自动启动网关，保存后生效。", startAtLogin)
+            row(body, "程序启动时启动网关", "打开程序或开机启动 Ocean 后，自动启动网关。可与开机启动分别设置。", autoStart)
             row(body, "换号重试次数", "单次失败请求最多轮换账号的次数，范围 1–20。", rotate)
             row(body, "日志保留天数", "记录超过保留期后自动清理，范围 1–3650 天。", retention)
             row(body, "故障转移策略", "配置同模型后备供应商与模型映射。", action("故障转移设置") { failover() })
@@ -181,7 +184,7 @@ internal class StitchSettingsPanel(
             })
         }
         val discard = action("放弃修改") { load(engine.settings(), engine.proxySettings(), engine.store().read("windows/autoStart") == "true"); message.text = "已还原为当前保存的设置" }
-        val defaults = action("恢复默认值") { load(GatewaySettings(exposeLan = false), ProxySettings(), false); message.text = "已填入默认值，点击保存后生效" }
+        val defaults = action("恢复默认值") { load(GatewaySettings(exposeLan = false), ProxySettings(), false, false); message.text = "已填入默认值，点击保存后生效" }
         editingControls += listOf(discard, defaults)
         add(JPanel(BorderLayout(8, 0)).apply {
             background = Color.WHITE; border = BorderFactory.createEmptyBorder(10, 12, 10, 12)
@@ -197,6 +200,7 @@ internal class StitchSettingsPanel(
             override fun changedUpdate(e: DocumentEvent) = filter()
         })
         load(engine.settings(), engine.proxySettings(), engine.store().read("windows/autoStart") == "true")
+        startAtLogin.addActionListener { if (startAtLogin.isSelected) autoStart.isSelected = true }
         selectSection("网关与访问"); refreshRuntimeStatus()
     }
 
@@ -253,7 +257,8 @@ internal class StitchSettingsPanel(
         scrollContent.revalidate(); scrollContent.repaint(); scroll.viewport.viewPosition = Point(0, 0)
         message.text = if (entries.none { it.first.isVisible }) "没有匹配的设置，试试其他关键词" else "修改后点击保存生效"
     }
-    private fun load(settings: GatewaySettings, proxy: ProxySettings, auto: Boolean) {
+    private fun load(settings: GatewaySettings, proxy: ProxySettings, auto: Boolean, login: Boolean = loginStartup.isEnabled()) {
+        startAtLogin.isSelected = login
         port.text = settings.port.toString(); apiKey.text = settings.apiKey; apiKey.echoChar = '●'; keyReveal.text = "显示"
         noKey.isSelected = settings.allowNoKey; lan.isSelected = settings.exposeLan
         provider.selectedItem = settings.defaultProvider; usable.isSelected = settings.onlyUsableModels
@@ -273,10 +278,12 @@ internal class StitchSettingsPanel(
         val proxy = engine.proxySettings().copy(enabled = proxyEnabled.isSelected, type = proxyType.selectedItem as ProxyType,
             host = proxyHost.text.trim(), port = parsedProxyPort ?: 8080, username = proxyUser.text, password = String(proxyPassword.password))
         val auto = autoStart.isSelected
+        val login = startAtLogin.isSelected
         saving = true; setEditingEnabled(false); message.text = "正在保存…"
         work("保存设置") {
             var success = false
             try {
+                loginStartup.setEnabled(login)
                 val previous = engine.settings(); val restart = engine.isRunning() && (previous.port != updated.port || previous.exposeLan != updated.exposeLan)
                 if (restart) engine.stop()
                 engine.updateSettings(updated); engine.updateProxySettings(proxy); engine.store().write("windows/autoStart", auto.toString())
@@ -293,7 +300,7 @@ internal class StitchSettingsPanel(
         }
     }
     private fun setEditingEnabled(enabled: Boolean) {
-        listOf(port, apiKey, noKey, lan, provider, proxyEnabled, proxyType, proxyHost, proxyPort, proxyUser, proxyPassword, usable, verbose, autoStart, rotate, retention, save).forEach { it.isEnabled = enabled }
+        listOf(port, apiKey, noKey, lan, provider, proxyEnabled, proxyType, proxyHost, proxyPort, proxyUser, proxyPassword, usable, verbose, autoStart, startAtLogin, rotate, retention, save).forEach { it.isEnabled = enabled }
         editingControls.forEach { it.isEnabled = enabled }
     }
     fun refreshRuntimeStatus() {

@@ -73,6 +73,36 @@ class FailoverIntegrationTest {
         }
     }
 
+    @Test
+    fun `所有模型都遍历供应商账号池而不是只重试前三个账号`() {
+        val engine = GatewayEngine(InMemoryKeyValueStore())
+        val calls = ArrayList<String>()
+        val provider = ConfigurableProvider("codebuddy", listOf("deepseek-v4-pro")) { account, _ ->
+            calls += account.uid
+            if (account.uid == "account-4") {
+                AggregatedChatCall(200, """{"id":"ok","object":"chat.completion","model":"deepseek-v4-pro","choices":[{"index":0,"message":{"role":"assistant","content":"第四个账号成功"}}]}""")
+            } else {
+                FailedChatCall(402, "{\"message\":\"额度不足\"}")
+            }
+        }
+        engine.registry.register(provider)
+        repeat(4) { index ->
+            engine.pool.upsert(ProviderAccount("codebuddy", "account-${index + 1}", "账号${index + 1}", "{}"))
+        }
+
+        // 即使配置的最大重试次数为 1，也必须把同一供应商的 4 个账号全部尝试完。
+        engine.updateFailoverSettings(ModelFailoverSettings(enabled = true, retry = RetryConfig(maxAttempts = 1)))
+        val server = GatewayHttpServer(engine, "127.0.0.1", 0).apply { start(0, true) }
+        try {
+            val (status, body) = post(server.listeningPort, "codebuddy/deepseek-v4-pro")
+            assertEquals(200, status)
+            assertTrue(body.contains("第四个账号成功"), body)
+            assertEquals(listOf("account-1", "account-2", "account-3", "account-4"), calls)
+        } finally {
+            server.stop()
+        }
+    }
+
     private fun post(serverPort: Int, model: String, bodyContent: String = "hi"): Pair<Int, String> {
         val conn = URL("http://127.0.0.1:$serverPort/v1/chat/completions").openConnection() as HttpURLConnection
         conn.requestMethod = "POST"

@@ -445,7 +445,7 @@ class TraeModelCatalogTest {
     fun `解析模型目录响应`() {
         val raw = """
             {"config_info_list":[
-              {"config_name":"glm-5.2","display_config":{"display_name":"GLM 5.2","multimodal":true}},
+              {"config_name":"glm-5.2","display_config":{"display_name":"GLM 5.2","multimodal":true,"context_window":"1M"}},
               {"config_name":"kimi-k3","display_config":{"display_name":"Kimi K3"}},
               {"config_name":""}
             ]}
@@ -455,7 +455,9 @@ class TraeModelCatalogTest {
         assertEquals("glm-5.2", models[0].id)
         assertEquals("GLM 5.2", models[0].name)
         assertTrue(models[0].supportsVision)
+        assertEquals(1_000_000L, models[0].contextWindow)
         assertTrue(!models[1].supportsVision)
+        assertEquals(131_072L, models[1].contextWindow, "未声明上下文时使用保守默认值")
     }
 
     @Test

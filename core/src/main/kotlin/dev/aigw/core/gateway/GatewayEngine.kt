@@ -948,6 +948,22 @@ class GatewayEngine(
     }
 
     /**
+     * 当前路由可参与轮换的账号数。
+     *
+     * 故障转移的最大尝试次数不能固定为 3：当同一供应商挂了 4 个以上账号时，
+     * 固定上限会让后面的账号永远得不到尝试。这里与 [pickAccount] 使用同一套
+     * enabled/disabled/region 过滤，保证一次请求至少能走完当前路由的账号池。
+     */
+    fun usableAccountCount(providerId: String, region: String? = null): Int {
+        val statusByUid = pool.statuses(providerId).associateBy { it.uid }
+        val regionAware = registry.get(providerId) as? dev.aigw.core.provider.RegionAwareSupport
+        return pool.accounts(providerId).count { account ->
+            val status = statusByUid[account.uid]
+            status?.usable == true && (region == null || regionAware == null || regionAware.regionOf(account) == region)
+        }
+    }
+
+    /**
      * 解析请求模型的所有候选路由（支持同款模型跨供应商故障转移 Failover）。
      *
      * 1. 若配置了显式多供应商优先级映射表，按优先级（priority 降序）依次尝试；

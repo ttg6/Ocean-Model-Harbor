@@ -248,7 +248,13 @@ class GatewayHttpServer(
             var attempt = 0
             var providerLastError = ""
             val quotaExhausted = HashSet<String>()
-            val maxAttempts = if (failoverCfg.enabled) failoverCfg.retry.maxAttempts else settings.maxRotate.coerceAtLeast(1)
+            val configuredMaxAttempts = if (failoverCfg.enabled) failoverCfg.retry.maxAttempts else settings.maxRotate.coerceAtLeast(1)
+            // 账号轮换不能被默认的 3 次重试截断：同一供应商挂有多个账号时，
+            // 至少把当前区域内所有可用账号各尝试一次。对所有模型统一生效。
+            val maxAttempts = maxOf(
+                configuredMaxAttempts,
+                engine.usableAccountCount(currentRoute.providerId, currentRoute.region),
+            )
 
             while (attempt < maxAttempts) {
                 attempt++

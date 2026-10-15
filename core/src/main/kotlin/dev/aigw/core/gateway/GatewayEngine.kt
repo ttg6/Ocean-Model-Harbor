@@ -5,6 +5,7 @@ import dev.aigw.core.pool.AccountPool
 import dev.aigw.core.pool.AccountStatus
 import dev.aigw.core.pool.PoolSummary
 import dev.aigw.core.provider.AuthKind
+import dev.aigw.core.provider.ACTION_CHECKIN
 import dev.aigw.core.provider.CreditInfo
 import dev.aigw.core.provider.DeviceAuthPoll
 import dev.aigw.core.provider.DeviceAuthTicket
@@ -39,6 +40,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.time.LocalDate
 
 /** 登录状态。 */
 enum class LoginState { SUCCESS, FAILED }
@@ -61,6 +63,21 @@ data class CreditRefreshResult(
     val balance: Long,
     val known: Boolean,
     val error: String,
+)
+
+/** 启动时自动签到的单账号结果。 */
+data class AutoCheckinResult(
+    val providerId: String,
+    val uid: String,
+    val nickname: String,
+    val ok: Boolean,
+    val message: String,
+)
+
+/** 一次启动签到任务的汇总；当天已执行时 [executed] 为 false。 */
+data class AutoCheckinSummary(
+    val executed: Boolean,
+    val results: List<AutoCheckinResult>,
 )
 
 /** 流式拉取模型目录时，单个供应商的就绪事件（成功带 models，失败带 error）。 */
@@ -572,6 +589,33 @@ class GatewayEngine(
     /** 无参数动作的便捷重载（调用方不必依赖 JsonObject）。 */
     fun performAction(providerId: String, uid: String, action: String): ProviderActionResult =
         performAction(providerId, uid, action, JsonObject())
+
+    /**
+     * 启动时对所有已启用且支持签到的账号执行一次每日签到。
+     * 同一天重复打开软件不会重复调用上游，也不会重复弹窗；次日首次启动会再次执行。
+     */
+    fun autoCheckinAll(): AutoCheckinSummary {
+        val today = LocalDate.now().toString()
+        synchronized(autoCheckinLock) {
+            if (store.read(AUTO_CHECKIN_DAY_KEY) == today) return AutoCheckinSummary(false, emptyList())
+            val targets = accounts().filter { account ->
+                account.usable && registry.get(account.providerId)?.capabilities?.contains(ProviderCapability.CHECKIN) == true
+            }
+            val results = targets.map { account ->
+                val result = runCatching { performAction(account.providerId, account.uid, ACTION_CHECKIN) }
+                    .getOrElse { ProviderActionResult.failure(it.message ?: "签到失败") }
+                AutoCheckinResult(
+                    providerId = account.providerId,
+                    uid = account.uid,
+                    nickname = account.nickname,
+                    ok = result.ok,
+                    message = result.message.ifEmpty { if (result.ok) "签到完成" else "签到失败" },
+                )
+            }
+            store.write(AUTO_CHECKIN_DAY_KEY, today)
+            return AutoCheckinSummary(true, results)
+        }
+    }
 
     // ------------------------------------------------------------------ 登录
 
@@ -1197,6 +1241,7 @@ class GatewayEngine(
 
     private companion object {
         const val DAY_MILLIS = 24L * 3600 * 1000
+        const val AUTO_CHECKIN_DAY_KEY = "automation/last-auto-checkin-day"
 
         /** 详细日志单条上限：环形日志每条都全量展示，太长会淹没其它日志。 */
         const val VERBOSE_LINE_LIMIT = 1500
@@ -1216,6 +1261,8 @@ class GatewayEngine(
         /** 登录回调监听的存活上限。 */
         const val CALLBACK_TIMEOUT_MS = 5L * 60 * 1000
     }
+
+    private val autoCheckinLock = Any()
 }
 
 /** 登录回调结果页（在系统浏览器里展示）。 */

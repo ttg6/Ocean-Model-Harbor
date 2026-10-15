@@ -306,6 +306,27 @@ class GatewayWindow(
     fun showOnLaunch(startup: Boolean) { isVisible = !startup || tray == null }
     fun startGateway() = background("启动网关") { engine.start() }
 
+    /** 在窗口完成初始化后执行当天首次自动签到，并弹窗展示所有账号结果。 */
+    fun autoCheckinOnLaunch() {
+        worker.submit {
+            val summary = engine.autoCheckinAll()
+            if (!summary.executed) return@submit
+            val text = if (summary.results.isEmpty()) {
+                "当前没有已启用且支持自动签到的账号。"
+            } else {
+                summary.results.joinToString("\n") { result ->
+                    val name = result.nickname.ifEmpty { result.uid }
+                    "${if (result.ok) "✓" else "✗"} ${result.providerId} / $name：${result.message}"
+                }
+            }
+            SwingUtilities.invokeLater {
+                if (!isVisible) { isVisible = true; extendedState = NORMAL; toFront() }
+                showText("启动自动签到", "本次启动已完成自动签到（每天只执行一次）：\n\n$text")
+                refreshAccounts()
+            }
+        }
+    }
+
     private fun refreshStatus() {
         tokenBudget.refresh()
         val status = engine.status()

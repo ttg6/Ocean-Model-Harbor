@@ -55,6 +55,7 @@ fun main(args: Array<String>) {
                 if (w != null && h != null) window.setSize(w.coerceAtLeast(940), h.coerceAtLeast(650))
             }
             window.showOnLaunch("--startup" in args)
+            window.autoCheckinOnLaunch()
             option("--screenshot")?.let { window.saveScreenshot(File(it)) }
             option("--banner-screenshot")?.let { window.saveBannerScreenshot(File(it)) }
             option("--tray-screenshot")?.let { window.saveTrayScreenshot(File(it)) }

@@ -1,5 +1,5 @@
 plugins { id("org.jetbrains.kotlin.jvm") version "2.1.0" apply false }
-allprojects { group = "dev.aigw"; version = "1.0.17" }
+allprojects { group = "dev.aigw"; version = "1.0.18" }
 subprojects {
     tasks.withType<Test>().configureEach {
         jvmArgs("-Dfile.encoding=UTF-8")

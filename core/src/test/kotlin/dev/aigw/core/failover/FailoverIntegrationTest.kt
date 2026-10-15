@@ -37,11 +37,40 @@ class FailoverIntegrationTest {
         override fun classify(status: Int, body: String): UpstreamError = when (status) {
             400 -> UpstreamError(ErrorKind.CLIENT, "invalid_request_error")
             401 -> UpstreamError(ErrorKind.SESSION_DEAD, "unauthorized")
+            402 -> UpstreamError(ErrorKind.QUOTA, "insufficient_quota")
             429 -> UpstreamError(ErrorKind.SOFT_RATE, "rate limit")
             else -> UpstreamError(ErrorKind.SERVER, "upstream error $status")
         }
         override fun openChat(account: ProviderAccount, openAiBody: String): ChatCall =
             behavior(account, openAiBody)
+    }
+
+    @Test
+    fun `积分耗尽时先切换同一供应商的下一个账号`() {
+        val engine = GatewayEngine(InMemoryKeyValueStore())
+        val calls = ArrayList<String>()
+        val provider = ConfigurableProvider("codebuddy", listOf("kimi-k3-1")) { account, _ ->
+            calls += account.uid
+            if (account.uid == "empty") {
+                FailedChatCall(402, "{\"message\":\"积分不足\"}")
+            } else {
+                AggregatedChatCall(200, """{"id":"ok","object":"chat.completion","model":"kimi-k3-1","choices":[{"index":0,"message":{"role":"assistant","content":"备用账号成功"}}]}""")
+            }
+        }
+        engine.registry.register(provider)
+        engine.pool.upsert(ProviderAccount("codebuddy", "empty", "已用完", "{}"))
+        engine.pool.upsert(ProviderAccount("codebuddy", "spare", "备用账号", "{}"))
+
+        val server = GatewayHttpServer(engine, "127.0.0.1", 0).apply { start(0, true) }
+        try {
+            val (status, body) = post(server.listeningPort, "codebuddy/kimi-k3-1")
+            assertEquals(200, status)
+            assertTrue(body.contains("备用账号成功"), body)
+            assertEquals(listOf("empty", "spare"), calls)
+            assertEquals(0L, engine.accounts("codebuddy").first { it.uid == "empty" }.credits)
+        } finally {
+            server.stop()
+        }
     }
 
     private fun post(serverPort: Int, model: String, bodyContent: String = "hi"): Pair<Int, String> {

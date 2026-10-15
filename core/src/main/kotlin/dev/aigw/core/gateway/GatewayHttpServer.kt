@@ -201,6 +201,8 @@ class GatewayHttpServer(
 
         // 首选路由优先；失败后做同款模型 Failover
         val triedProviders = LinkedHashSet<String>()
+        val triedRoutes = LinkedHashSet<String>()
+        fun routeKey(route: Route): String = "${route.providerId}#${route.region.orEmpty()}"
         var currentRoute = primaryRoute
 
         // 候选路由惰性解析并缓存：仅当首选失败需要换家时才计算，且只算一次。
@@ -212,6 +214,7 @@ class GatewayHttpServer(
         while (true) {
             val providerId = currentRoute.providerId
             triedProviders.add(providerId)
+            triedRoutes.add(routeKey(currentRoute))
             val provider = engine.registry.get(providerId) ?: break
 
             // 1. 熔断检查：某供应商连续失败达标后，在静默期内直接跳过，避免拖慢整体响应
@@ -223,7 +226,9 @@ class GatewayHttpServer(
 
                 // 寻找下一个候选供应商
                 val next = candidateRoutes()
-                    .firstOrNull { it.providerId !in triedProviders && engine.pool.pick(it.providerId) != null }
+                    .firstOrNull {
+                        routeKey(it) !in triedRoutes && engine.pickAccount(it.providerId, region = it.region) != null
+                    }
                 if (next != null) {
                     log("自动故障转移至下一候选供应商 [${next.providerId}]...")
                     currentRoute = next
@@ -242,16 +247,17 @@ class GatewayHttpServer(
             val tried = HashSet<String>()
             var attempt = 0
             var providerLastError = ""
+            val quotaExhausted = HashSet<String>()
             val maxAttempts = if (failoverCfg.enabled) failoverCfg.retry.maxAttempts else settings.maxRotate.coerceAtLeast(1)
 
             while (attempt < maxAttempts) {
                 attempt++
-                var picked = engine.pickAccount(currentRoute.providerId, tried, currentRoute.region)
+                var picked = engine.pickAccount(currentRoute.providerId, tried + quotaExhausted, currentRoute.region)
                 if (picked == null) {
-                    // 若池中有可用账号（如单账号或全部账号已轮过一轮），清空已试列表允许继续完成剩余重试配额
-                    if (engine.pickAccount(currentRoute.providerId, emptySet(), currentRoute.region) != null) {
-                        tried.clear()
-                        picked = engine.pickAccount(currentRoute.providerId, tried, currentRoute.region)
+                    // 只清空普通失败账号；已报告额度耗尽的账号在本次请求中不再重复尝试。
+                    tried.clear()
+                    if (engine.pickAccount(currentRoute.providerId, quotaExhausted, currentRoute.region) != null) {
+                        picked = engine.pickAccount(currentRoute.providerId, quotaExhausted, currentRoute.region)
                     }
                 }
                 if (picked == null) break
@@ -318,6 +324,10 @@ class GatewayHttpServer(
                     call.close()
                     cb.recordFailure()
                     pMetrics.record(false, elapsed, failure.kind.name)
+                        if (failure.kind == ErrorKind.QUOTA) {
+                            quotaExhausted += account.uid
+                            engine.pool.updateCredits(providerId, account.uid, 0, known = true, detail = "上游报告额度/积分不足")
+                        }
                     if (failure.kind == ErrorKind.CLIENT) {
                         log("请求被上游拒绝（${currentRoute.providerId}/${account.nickname}）：${failure.message}")
                         if (engine.verboseLogging()) engine.logVerbose("返回原文", call.errorBody)
@@ -360,6 +370,16 @@ class GatewayHttpServer(
                         engine.logVerbose("返回原文", call.errorBody)
                     }
                     call.close()
+
+                    // 额度耗尽通常只影响当前账号；先尝试同一供应商的下一个账号，
+                    // 全部账号都耗尽后才会走下方的跨供应商候选路由。
+                    if (error.kind == ErrorKind.QUOTA) {
+                        quotaExhausted += account.uid
+                        engine.pool.updateCredits(providerId, account.uid, 0, known = true, detail = "上游报告额度/积分不足")
+                        providerLastError = error.message
+                        lastError = error.message
+                        continue
+                    }
 
                     // 错误决策：客户端不可重试错误（400/审核）立即中断返回客户端，不重试不换家
                     val decision = dev.aigw.core.failover.ClassifiedError(
@@ -451,7 +471,9 @@ class GatewayHttpServer(
 
             // 同款模型跨供应商 Failover：按优先级选下一个尚未尝试且有可用账号的供应商
             val next = candidateRoutes()
-                .firstOrNull { it.providerId !in triedProviders && engine.pool.pick(it.providerId) != null }
+                .firstOrNull {
+                    routeKey(it) !in triedRoutes && engine.pickAccount(it.providerId, region = it.region) != null
+                }
             if (next != null) {
                 log("[故障转移] 供应商 [${currentRoute.providerId}] 调用未成功（$errDetail），自动切换至备选供应商 [${next.providerId}]（对应模型: ${next.model}）...")
                 currentRoute = next
@@ -463,7 +485,7 @@ class GatewayHttpServer(
         val allErrors = routeErrors.joinToString("；")
         val reason = "所有候选供应商均不可用：$allErrors"
         if (engine.verboseLogging()) {
-            log("全部尝试完毕返回 503：已试供应商 [${triedProviders.joinToString(", ")}]")
+            log("全部尝试完毕返回 503：已试路由 [${triedRoutes.joinToString(", ")}]")
             routeErrors.forEachIndexed { index, error -> log("  原因 ${index + 1}：$error") }
         } else {
             log("全部供应商尝试完毕，返回 503：$reason")

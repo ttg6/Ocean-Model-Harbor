@@ -117,4 +117,37 @@ class ModelFailoverTest {
             server.stop()
         }
     }
+
+    @Test
+    fun `不同供应商的等价模型命名也能作为备用路由`() {
+        val engine = GatewayEngine(InMemoryKeyValueStore())
+        val providerA = TestProvider("providerA", listOf("kimi-k3-1"), shouldFail = true)
+        val providerB = TestProvider("providerB", listOf("kimi-k3"), shouldFail = false, responseContent = "等价模型成功")
+        engine.registry.register(providerA)
+        engine.registry.register(providerB)
+        engine.pool.upsert(ProviderAccount("providerA", "a", "A", "{}"))
+        engine.pool.upsert(ProviderAccount("providerB", "b", "B", "{}"))
+
+        val server = GatewayHttpServer(engine, "127.0.0.1", 0).apply { start(0, true) }
+        try {
+            val (status, body) = run {
+                val conn = URL("http://127.0.0.1:${server.listeningPort}/v1/chat/completions").openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.outputStream.write("""{"model":"providerA/kimi-k3-1","messages":[{"role":"user","content":"hi"}]}""".toByteArray())
+                statusAndBody(conn)
+            }
+            assertEquals(200, status)
+            assertTrue(body.contains("等价模型成功"), body)
+        } finally {
+            server.stop()
+        }
+    }
+
+    private fun statusAndBody(conn: HttpURLConnection): Pair<Int, String> {
+        val status = conn.responseCode
+        val stream = if (status in 200..299) conn.inputStream else conn.errorStream
+        return status to stream?.bufferedReader()?.readText().orEmpty()
+    }
 }

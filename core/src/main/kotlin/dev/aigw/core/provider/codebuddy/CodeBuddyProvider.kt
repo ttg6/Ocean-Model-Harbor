@@ -135,10 +135,10 @@ class CodeBuddyProvider(
         val message = extractMessage(body)
         val kind = when {
             status == 402 -> ErrorKind.QUOTA
+            matchesQuota(body) -> ErrorKind.QUOTA
             status == 429 -> ErrorKind.SOFT_RATE
             status == 404 -> ErrorKind.NOT_FOUND
             status in 500..599 -> ErrorKind.SERVER
-            matchesQuota(body) -> ErrorKind.QUOTA
             matchesSessionDead(body) -> ErrorKind.SESSION_DEAD
             status in 400..499 -> ErrorKind.CLIENT
             else -> ErrorKind.CLIENT

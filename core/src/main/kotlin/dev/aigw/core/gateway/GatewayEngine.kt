@@ -983,6 +983,19 @@ class GatewayEngine(
         val baseModel = primary.model.substringAfterLast('/').trim()
         val normBase = normalizeModelKey(baseModel)
 
+        // 区域型供应商的不同区域共用一个 providerId，但账号池彼此独立。
+        // 例如 codebuddy-cn/Kimi 与 codebuddy-global/Kimi 需要作为两个候选路由处理。
+        val primaryRegionAware = registry.get(primary.providerId) as? dev.aigw.core.provider.RegionAwareSupport
+        if (primary.region != null && primaryRegionAware != null) {
+            for (region in primaryRegionAware.regions()) {
+                if (region == primary.region) continue
+                if (!providerSettings(primary.providerId).enabled) continue
+                if (pickAccount(primary.providerId, region = region) == null) continue
+                val matched = findMatchingModel(registry.get(primary.providerId)!!, baseModel, normBase, region)
+                if (matched != null) candidates.add(Route(primary.providerId, matched, region))
+            }
+        }
+
         for (provider in registry.all()) {
             if (provider.id in seen) continue
             if (!providerSettings(provider.id).enabled) continue
@@ -1005,7 +1018,7 @@ class GatewayEngine(
             .trim()
     }
 
-    private fun findMatchingModel(provider: Provider, baseModel: String, normBase: String): String? {
+    private fun findMatchingModel(provider: Provider, baseModel: String, normBase: String, region: String? = null): String? {
         if (provider is dev.aigw.core.provider.custom.CustomProvider) {
             for (m in provider.savedModels()) {
                 if (normalizeModelKey(m) == normBase || m.equals(baseModel, ignoreCase = true) || isEquivalentModel(normalizeModelKey(m), normBase)) {
@@ -1015,7 +1028,7 @@ class GatewayEngine(
             return null
         }
 
-        val catalog = runCatching { provider.listModels(pool.pick(provider.id)) }.getOrNull()
+        val catalog = runCatching { provider.listModels(pickAccount(provider.id, region = region)) }.getOrNull()
         if (catalog != null) {
             for (m in catalog.models) {
                 val norm = normalizeModelKey(m.id)
@@ -1032,7 +1045,9 @@ class GatewayEngine(
         // 剥离版本或性能修饰符对比：如 deepseek-v4-pro vs deepseek-v4-flash, gemini-3.8-flash vs gemini-3.8-flash-high
         val cleanA = a.removeSuffix("-high").removeSuffix("-low").removeSuffix("-preview")
         val cleanB = b.removeSuffix("-high").removeSuffix("-low").removeSuffix("-preview")
-        return cleanA == cleanB
+        if (cleanA == cleanB) return true
+        // WorkBuddy 的 kimi-k3-1 与 TRAE 的 kimi-k3 是同一逻辑模型的不同目录命名。
+        return cleanA.removeSuffix("-1") == cleanB || cleanB.removeSuffix("-1") == cleanA
     }
 
     /**

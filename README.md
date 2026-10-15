@@ -6,7 +6,7 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 
 本项目是基于原仓库的 **Windows 移植与界面定制版本**，复用上游 Kotlin/JVM 核心和协议测试。上游基线：[15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce](https://github.com/xibai6668/Android-AI-gateway/commit/15e42951f7ee4a661fc4b2056d8e1f1c1ef133ce)。完整来源与致谢见 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)，原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
 
-![Ocean 模型港 Windows 1.0.14 主界面](docs/windows-preview.png)
+![Ocean 模型港 Windows 1.0.15 主界面](docs/windows-preview.png)
 
 ## 下载与使用教程
 
@@ -26,6 +26,10 @@ Ocean 模型港是一款 Windows 多账号 AI 模型网关，将多个模型服�
 4. 在客户端中选择 **OpenAI Chat Completions** 协议，Base URL 填 `http://127.0.0.1:8790/v1`，添加并选择复制的完整模型 ID。默认允许无 Key 调用，API Key 可填 `sk-local-gateway`；关闭无 Key 调用后，填写自己保存的网关 Key。修改端口后以首页实际地址为准。
 
 Windows 1.0.14 起，刷新模型目录后，已由上游明确声明支持图片输入的模型会在显示名称末尾标注“（视觉）”。这只是能力提示，复制和调用仍使用表格中的原始完整模型 ID；未知能力不会猜测或误标。
+
+Windows 1.0.15 起，账号额度耗尽时会优先在同一供应商的账号池中换下一个账号；如果配置了可用的其他区域或供应商同款模型，也会继续故障转移。不同供应商的积分是独立账本，不能直接合并或互相抵扣。
+
+当前网关实时目录中，TRAE 模型返回的上下文窗口为 131,072；WorkBuddy 国内通道的部分模型返回 1,000,000。TRAE 目录里名称带“1M”的内部/自定义条目不代表可调用模型的真实上下文，因此不会虚报为百万上下文。
 
 关闭窗口后程序留在系统托盘；双击海锚图标打开窗口，右键在图标旁弹出中文快捷控制窗口，可启动或停止网关。点击外部或按 Esc 收起，选择「退出程序」关闭网关。1.0.13 可在「设置 → 偏好与数据」开启「开机启动 Ocean」，登录 Windows 后自动留在托盘；开启时默认同时勾选「打开程序时自动启动网关」。保存后生效，两个开关可分别控制。首次安装默认关闭开机启动。
 
